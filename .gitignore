@@ -1,0 +1,3 @@
+server/.idea/*
+server/cmake-build-debug/*
+server/*.pem
