@@ -17,6 +17,7 @@ class tls_connection;
 }
 
 #include "tls_server_socket.hpp"
+#include "tls_client_socket.hpp"
 #include "tls_context.hpp"
 #include "openssl/ssl.h"
 #include <sstream>
@@ -41,25 +42,19 @@ public:
     return *this;
   }
 
-  template <typename T>
-  tls_connection &operator>>(T &out) {
-    if(rdbuffer.eof()) { read(); }
-    rdbuffer >> out;
-    return *this;
-  }
+  std::stringstream read();
 
   ~tls_connection();
 
 private:
   tls_connection(const tls_context &ctxt, int conn_handle);
-  void read();
 
   std::stringstream buffer = std::stringstream();
-  std::stringstream rdbuffer = std::stringstream();
   SSL *ssl;
   int conn_handle;
   bool connected = false;
   friend tls_server_socket;
+  friend tls_client_socket;
 };
 }
 

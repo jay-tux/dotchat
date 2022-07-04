@@ -14,13 +14,13 @@ void help(const char *invoker) {
 
 int main(int argc, const char **argv) {
   log << reset;
-  log << logger::banner() << endl;
+  log << logger::banner_t<true>{} << endl;
   if(argc < 3 || (argc == 2 && std::string(argv[1]) == "-h")) {
     help(argv[0]);
     return 0;
   }
 
-  log << init << "starting server..." << endl;
+  log << init << "Starting server..." << endl;
 
   try {
     auto context = tls_context(std::string(argv[1]), std::string(argv[2]));
@@ -29,7 +29,7 @@ int main(int argc, const char **argv) {
     conn << "Hellooooo!\n" << tls_connection::end_of_msg{};
     conn << "And hello again\n" << tls_connection::end_of_msg{};
 
-    log << init << "server shutting down..." << endl;
+    log << init << "Server shutting down..." << endl;
   }
   catch(const std::exception &exc) {
     log << error << red << "An error occurred:" << endl;

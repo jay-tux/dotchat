@@ -22,9 +22,13 @@ class tls_context;
 namespace dotchat::server {
 class tls_context {
 public:
+  enum class mode { CLIENT, SERVER };
+  explicit tls_context(const std::string &cert_file);
   tls_context(const std::string &key_file, const std::string &cert_file);
   tls_context(const tls_context &other);
   tls_context(tls_context &&other) noexcept;
+
+  inline mode get_mode() const { return operation; }
 
   tls_context &operator=(const tls_context &other);
   tls_context &operator=(tls_context &&other) noexcept;
@@ -33,10 +37,12 @@ public:
 
   ~tls_context();
 
-  const static SSL_METHOD *method;
+  const static SSL_METHOD *server_method;
+  const static SSL_METHOD *client_method;
 
 private:
   SSL_CTX *internal;
+  mode operation;
   std::string key;
   std::string cert;
 };

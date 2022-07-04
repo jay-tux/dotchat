@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(dotchat_server)
+project(dotchat_client)
 
 set(CONAN_EXIT_CODE not_run_yet)
 message("Trying to run `conan install ..` from ${CMAKE_BINARY_DIR}")

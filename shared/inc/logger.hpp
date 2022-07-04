@@ -113,6 +113,7 @@ struct logger {
 
   struct endl_t {
   };
+  template<bool is_server>
   struct banner_t {
   };
 
@@ -137,7 +138,8 @@ struct logger {
 
   static logger &get() noexcept;
 
-  static std::string &banner() noexcept;
+  static std::string &banner_server() noexcept;
+  static std::string &banner_client() noexcept;
 
   logger &operator=(const logger &) = delete;
 
@@ -149,8 +151,10 @@ struct logger {
     return *this;
   }
 
-  const logger &operator<<(const banner_t &) const {
-    std::cerr << banner();
+  template<bool is_server>
+  const logger &operator<<(const banner_t<is_server> &) const {
+    if constexpr(is_server) std::cerr << banner_server();
+    else std::cerr << banner_client();
     return *this;
   }
 

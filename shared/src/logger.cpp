@@ -20,11 +20,20 @@ logger &logger::get() noexcept {
   return l;
 }
 
-std::string &logger::banner() noexcept {
+std::string &logger::banner_server() noexcept {
   static std::string banner = R"BANNER(
-+=============================+
-|  Welcome to dotchat Server  |
-+=============================+
+        +=============================+
+        |  Welcome to dotchat Server  |
+        +=============================+
+)BANNER";
+  return banner;
+}
+
+std::string &logger::banner_client() noexcept {
+  static std::string banner = R"BANNER(
+        +=============================+
+        |  Welcome to dotchat Client  |
+        +=============================+
 )BANNER";
   return banner;
 }

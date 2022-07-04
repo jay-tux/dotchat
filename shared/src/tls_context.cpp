@@ -15,11 +15,12 @@
 using namespace dotchat::server;
 using namespace dotchat::values;
 
-const SSL_METHOD *tls_context::method = TLS_server_method();
+const SSL_METHOD *tls_context::server_method = TLS_server_method();
+const SSL_METHOD *tls_context::client_method = TLS_client_method();
 const logger::log_source init{"TLS_CTXT", yellow};
 
-SSL_CTX *_setup(const std::string &key, const std::string &cert) {
-  auto ptr = SSL_CTX_new(tls_context::method);
+SSL_CTX *server_setup(const std::string &key, const std::string &cert) {
+  auto ptr = SSL_CTX_new(tls_context::server_method);
   if (!ptr) {
     throw tls_error("Failed to create SSL/TLS context.");
   }
@@ -33,18 +34,37 @@ SSL_CTX *_setup(const std::string &key, const std::string &cert) {
   return ptr;
 }
 
-tls_context::tls_context(const std::string &key_file, const std::string &cert_file) : key{key_file}, cert{cert_file} {
-  log << init << "Starting from key file " << key_file << " and certificate " << cert_file << endl;
-  internal = _setup(key_file, cert_file);
+SSL_CTX *client_setup(const std::string &cert) {
+  auto ptr = SSL_CTX_new(tls_context::client_method);
+  if (!ptr) {
+    throw tls_error("Failed to create SSL/TLS context.");
+  }
+  SSL_CTX_set_verify(ptr, SSL_VERIFY_PEER, nullptr);
+  if (SSL_CTX_load_verify_locations(ptr, cert.c_str(), nullptr) <= 0) {
+    throw tls_error("Failed to load certificate.");
+  }
+  return ptr;
 }
 
-tls_context::tls_context(const tls_context &other) : internal{nullptr} {
+tls_context::tls_context(const std::string &cert_file) : operation{mode::CLIENT}, cert{cert_file} {
+  log << init << "Starting (client) from certificate " << cert_file << endl;
+  internal = client_setup(cert_file);
+}
+
+tls_context::tls_context(const std::string &key_file, const std::string &cert_file) : operation{mode::SERVER},
+                                                                                               key{key_file},
+                                                                                               cert{cert_file} {
+  log << init << "Starting (server) from key file " << key_file << " and certificate " << cert_file << endl;
+  internal = server_setup(key_file, cert_file);
+}
+
+tls_context::tls_context(const tls_context &other) : internal{nullptr}, operation{other.operation} {
   log << init << "Copy-constructing TLS context from other(key: " << other.key << ", cert: " << other.cert << ")"
       << endl;
   *this = other;
 }
 
-tls_context::tls_context(tls_context &&other) noexcept : internal{nullptr} {
+tls_context::tls_context(tls_context &&other) noexcept : internal{nullptr}, operation{other.operation} {
   log << init << "Move-constructing TLS context from other(key: " << other.key << ", cert: " << other.cert << ")"
       << endl;
   *this = std::move(other);
@@ -53,7 +73,10 @@ tls_context::tls_context(tls_context &&other) noexcept : internal{nullptr} {
 tls_context &tls_context::operator=(const tls_context &other) {
   if (this == &other) return *this;
   log << init << "Copying TLS context..." << endl;
-  internal = _setup(other.key, other.cert);
+  operation = other.operation;
+  key = other.key;
+  cert = other.cert;
+  internal = (operation == mode::SERVER) ? server_setup(other.key, other.cert) : client_setup(other.cert);
   return *this;
 }
 
