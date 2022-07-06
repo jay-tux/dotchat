@@ -12,7 +12,7 @@
 #define DOTCHAT_SERVER_TLS_CLIENT_SOCKET_HPP
 
 // forward declares
-namespace dotchat::server {
+namespace dotchat::tls {
 class tls_client_socket;
 }
 
@@ -21,7 +21,7 @@ class tls_client_socket;
 #include "tls_context.hpp"
 #include "tls_connection.hpp"
 
-namespace dotchat::server {
+namespace dotchat::tls {
 class tls_client_socket {
 public:
   struct socket_error : std::exception {

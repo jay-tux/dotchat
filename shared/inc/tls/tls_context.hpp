@@ -12,14 +12,14 @@
 #define DOTCHAT_SERVER_TLS_CONTEXT_HPP
 
 // forward declares
-namespace dotchat::server {
+namespace dotchat::tls {
 class tls_context;
 }
 
 #include <string>
 #include "openssl/ssl.h"
 
-namespace dotchat::server {
+namespace dotchat::tls {
 class tls_context {
 public:
   enum class mode { CLIENT, SERVER };

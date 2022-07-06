@@ -12,7 +12,8 @@
 #include "tls/tls_error.hpp"
 #include <sstream>
 
-using namespace dotchat::server;
+using namespace dotchat;
+using namespace dotchat::tls;
 using namespace dotchat::values;
 
 const SSL_METHOD *tls_context::server_method = TLS_server_method();

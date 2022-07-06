@@ -18,7 +18,7 @@
 #include "openssl/err.h"
 #include "logger.hpp"
 
-namespace dotchat::server {
+namespace dotchat::tls {
 struct tls_error : public std::exception {
   inline explicit tls_error(std::string msg) : std::exception(), msg{std::move(msg)} {
     std::array<char, 1024> buf = {};

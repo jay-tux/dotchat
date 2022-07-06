@@ -5,6 +5,8 @@
 
 // TODO (general): protocol implementation
 
+using namespace dotchat;
+using namespace dotchat::tls;
 using namespace dotchat::server;
 using namespace dotchat::values;
 

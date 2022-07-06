@@ -12,7 +12,7 @@
 #define DOTCHAT_SERVER_TLS_CONNECTION_HPP
 
 // forward declares
-namespace dotchat::server {
+namespace dotchat::tls {
 class tls_connection;
 }
 
@@ -22,7 +22,7 @@ class tls_connection;
 #include "openssl/ssl.h"
 #include <sstream>
 
-namespace dotchat::server {
+namespace dotchat::tls {
 class tls_connection {
 public:
   struct end_of_msg {};

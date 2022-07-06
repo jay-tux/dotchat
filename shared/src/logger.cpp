@@ -10,7 +10,7 @@
 #include <chrono>
 #include "logger.hpp"
 
-using namespace dotchat::server;
+using namespace dotchat;
 
 decltype(logger::start) logger::start;
 

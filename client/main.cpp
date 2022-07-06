@@ -2,7 +2,8 @@
 #include "logger.hpp"
 #include "tls/tls_client_socket.hpp"
 
-using namespace dotchat::server;
+using namespace dotchat;
+using namespace dotchat::tls;
 using namespace dotchat::values;
 
 const logger::log_source init { "MAIN", cyan };

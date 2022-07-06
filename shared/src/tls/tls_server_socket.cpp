@@ -12,7 +12,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-using namespace dotchat::server;
+using namespace dotchat;
+using namespace dotchat::tls;
 using namespace dotchat::values;
 
 const logger::log_source init{"TLS_SOCK", magenta};

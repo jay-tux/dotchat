@@ -13,7 +13,8 @@
 #include "openssl/ssl.h"
 #include <sys/socket.h>
 
-using namespace dotchat::server;
+using namespace dotchat;
+using namespace dotchat::tls;
 using namespace dotchat::values;
 
 const logger::log_source init{"TLS_CONN", blue};

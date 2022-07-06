@@ -19,7 +19,7 @@
 #include <chrono>
 #include "termcolor/termcolor.hpp"
 
-namespace dotchat::server {
+namespace dotchat {
 namespace _colors {
 enum class color_e {
   BLUE, GREEN, RED, WHITE, CYAN, YELLOW, MAGENTA, GREY, RESET
@@ -201,22 +201,21 @@ private:
 }
 
 namespace dotchat::values {
-const static inline server::logger &log = server::logger::get();
-const static inline server::logger::endl_t endl = {};
-const static inline server::logger::color<server::logger::color_e::BLUE> blue = {};
-const static inline server::logger::color<server::logger::color_e::GREEN> green = {};
-const static inline server::logger::color<server::logger::color_e::RED> red = {};
-const static inline server::logger::color<server::logger::color_e::WHITE> white = {};
-const static inline server::logger::color<server::logger::color_e::CYAN> cyan = {};
-const static inline server::logger::color<server::logger::color_e::YELLOW> yellow = {};
-const static inline server::logger::color<server::logger::color_e::MAGENTA> magenta = {};
-const static inline server::logger::color<server::logger::color_e::GREY> grey = {};
-const static inline server::logger::color<server::logger::color_e::RESET> reset = {};
+const static inline logger &log = logger::get();
+const static inline logger::endl_t endl = {};
+const static inline logger::color<logger::color_e::BLUE> blue = {};
+const static inline logger::color<logger::color_e::WHITE> white = {};
+const static inline logger::color<logger::color_e::CYAN> cyan = {};
+const static inline logger::color<logger::color_e::YELLOW> yellow = {};
+const static inline logger::color<logger::color_e::MAGENTA> magenta = {};
+const static inline logger::color<logger::color_e::GREY> grey = {};
+const static inline logger::color<logger::color_e::RED> red = {};
+const static inline logger::color<logger::color_e::RESET> reset = {};
 
-const static inline server::logger::mod<server::logger::modifier_e::BOLD> bold = {};
-const static inline server::logger::mod<server::logger::modifier_e::ITALIC> italic = {};
-const static inline server::logger::mod<server::logger::modifier_e::UNDERLINE> underline = {};
-const static inline server::logger::mod<server::logger::modifier_e::RESET> reset_mod = {};
+const static inline logger::mod<logger::modifier_e::BOLD> bold = {};
+const static inline logger::mod<logger::modifier_e::ITALIC> italic = {};
+const static inline logger::mod<logger::modifier_e::UNDERLINE> underline = {};
+const static inline logger::mod<logger::modifier_e::RESET> reset_mod = {};
 }
 
 #endif //DOTCHAT_SERVER_LOGGER_HPP
