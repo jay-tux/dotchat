@@ -15,11 +15,10 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
 add_executable(${PROJECT_NAME} main.cpp
-        ../shared/src/tls_server_socket.cpp ../shared/src/tls_client_socket.cpp
-        ../shared/src/logger.cpp ../shared/src/tls_context.cpp
-        ../shared/src/tls_connection.cpp
-        main.cpp
-)
+        ../shared/src/tls/tls_server_socket.cpp ../shared/src/tls/tls_client_socket.cpp
+        ../shared/src/logger.cpp ../shared/src/tls/tls_context.cpp
+        ../shared/src/tls/tls_connection.cpp
+        main.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE inc/)
 target_include_directories(${PROJECT_NAME} PRIVATE ../shared/inc/)
 conan_target_link_libraries(${PROJECT_NAME})

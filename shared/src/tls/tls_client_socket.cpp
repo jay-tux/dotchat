@@ -7,7 +7,7 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
-#include "tls_client_socket.hpp"
+#include "tls/tls_client_socket.hpp"
 #include "logger.hpp"
 #include <sys/socket.h>
 #include <arpa/inet.h>

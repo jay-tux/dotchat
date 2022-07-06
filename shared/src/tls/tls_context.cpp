@@ -7,9 +7,9 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
-#include "tls_context.hpp"
+#include "tls/tls_context.hpp"
 #include "logger.hpp"
-#include "tls_error.hpp"
+#include "tls/tls_error.hpp"
 #include <sstream>
 
 using namespace dotchat::server;

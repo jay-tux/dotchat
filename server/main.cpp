@@ -1,6 +1,9 @@
 #include <string>
 #include "logger.hpp"
-#include "tls_server_socket.hpp"
+#include "tls/tls_server_socket.hpp"
+#include "db/db.hpp"
+
+// TODO (general): protocol implementation
 
 using namespace dotchat::server;
 using namespace dotchat::values;
@@ -25,6 +28,8 @@ int main(int argc, const char **argv) {
   try {
     auto context = tls_context(std::string(argv[1]), std::string(argv[2]));
     auto socket = tls_server_socket(42069, context);
+    log << init << "Waiting for connections..." << endl;
+    // TODO: loop
     auto conn = socket.accept();
     conn << "Hellooooo!\n" << tls_connection::end_of_msg{};
     conn << "And hello again\n" << tls_connection::end_of_msg{};

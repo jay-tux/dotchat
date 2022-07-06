@@ -4,3 +4,5 @@ server/cmake-build-debug/*
 client/cmake-build-debug/*
 server/*.pem
 client/*.pem
+
+server/*.sql_db

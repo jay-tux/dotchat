@@ -7,8 +7,8 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
-#include "tls_connection.hpp"
-#include "tls_error.hpp"
+#include "tls/tls_connection.hpp"
+#include "tls/tls_error.hpp"
 #include "logger.hpp"
 #include "openssl/ssl.h"
 #include <sys/socket.h>

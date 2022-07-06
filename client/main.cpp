@@ -1,6 +1,6 @@
 #include <string>
 #include "logger.hpp"
-#include "tls_client_socket.hpp"
+#include "tls/tls_client_socket.hpp"
 
 using namespace dotchat::server;
 using namespace dotchat::values;

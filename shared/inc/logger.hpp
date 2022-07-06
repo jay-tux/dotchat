@@ -66,7 +66,7 @@ struct color<color_e::MAGENTA> {
 
 template<>
 struct color<color_e::GREY> {
-  constexpr static const auto val = termcolor::grey;
+  constexpr static const auto val = termcolor::bright_grey;
 };
 
 template<>

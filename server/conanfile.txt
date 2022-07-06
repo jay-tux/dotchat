@@ -1,6 +1,8 @@
 [requires]
 openssl/3.0.3
 termcolor/2.0.0
+sqlite3/3.38.5
+fpgen/1.1.0-clang
 
 [generators]
 cmake
