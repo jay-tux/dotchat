@@ -19,10 +19,13 @@ class tls_connection;
 #include "tls_server_socket.hpp"
 #include "tls_client_socket.hpp"
 #include "tls_context.hpp"
+#include "tls_bytestream.hpp"
 #include "openssl/ssl.h"
-#include <sstream>
+#include <vector>
 
 namespace dotchat::tls {
+using byte = uint8_t;
+
 class tls_connection {
 public:
   struct end_of_msg {};
@@ -42,14 +45,14 @@ public:
     return *this;
   }
 
-  std::stringstream read();
+  bytestream read();
 
   ~tls_connection();
 
 private:
   tls_connection(const tls_context &ctxt, int conn_handle);
 
-  std::stringstream buffer = std::stringstream();
+  bytestream buffer = bytestream();
   SSL *ssl;
   int conn_handle;
   bool connected = false;

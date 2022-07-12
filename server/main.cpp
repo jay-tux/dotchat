@@ -1,12 +1,14 @@
 #include <string>
 #include "logger.hpp"
 #include "tls/tls_server_socket.hpp"
+#include "protocol/message.hpp"
 #include "db/db.hpp"
 
 // TODO (general): protocol implementation
 
 using namespace dotchat;
 using namespace dotchat::tls;
+using namespace dotchat::proto;
 using namespace dotchat::server;
 using namespace dotchat::values;
 
@@ -33,8 +35,17 @@ int main(int argc, const char **argv) {
     log << init << "Waiting for connections..." << endl;
     // TODO: loop
     auto conn = socket.accept();
-    conn << "Hellooooo!\n" << tls_connection::end_of_msg{};
-    conn << "And hello again\n" << tls_connection::end_of_msg{};
+    message m;
+    m.command = command_type::ERR;
+    m.args = decltype(m.args){
+        {'r', "TEST"},
+        {'v', 123456789},
+        {'o', R"(With\\Backslashes)"},
+        {'p', R"(Extra\"weird\stuffs)"}
+    };
+    log << init << "Sending weird message/command..." << endl;
+    conn << m.as_string() << tls_connection::end_of_msg{};
+    log << init << "Done!" << endl;
 
     log << init << "Server shutting down..." << endl;
   }

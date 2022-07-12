@@ -18,6 +18,7 @@ add_executable(${PROJECT_NAME} main.cpp
         ../shared/src/tls/tls_server_socket.cpp ../shared/src/tls/tls_client_socket.cpp
         ../shared/src/logger.cpp ../shared/src/tls/tls_context.cpp
         ../shared/src/tls/tls_connection.cpp
+        ../shared/src/protocol/message.cpp
         main.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE inc/)
 target_include_directories(${PROJECT_NAME} PRIVATE ../shared/inc/)

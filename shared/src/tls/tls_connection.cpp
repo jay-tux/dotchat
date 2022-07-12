@@ -35,26 +35,28 @@ tls_connection::tls_connection(const tls_context &ctxt, int conn_handle) : ssl{S
 }
 
 void tls_connection::operator<<(const end_of_msg) {
-  log << init << "Sending message of " << buffer.str().size() << " bytes." << endl;
-  if(SSL_write(ssl, buffer.str().c_str(), static_cast<int>(buffer.str().size())) < 0)
-    throw tls_error("Can't send message `" + buffer.str() + "`");
-  buffer.str("");
+  log << init << "Sending message of " << buffer.size() << " bytes." << endl;
+  if(SSL_write(ssl, buffer.buffer(), static_cast<int>(buffer.size())) < 0)
+    throw tls_error("Can't send message `" +
+    std::string(static_cast<const char *>(buffer.buffer())) + "`");
+  buffer.cleanse();
 }
 
-std::stringstream tls_connection::read() {
+bytestream tls_connection::read() {
   log << init << "Attempting to read from TLS socket..." << endl;
-  std::stringstream rdbuffer;
-  std::array<char, 1024> buf = {};
+  std::vector<char> buf;
+  buf.reserve(1024);
+  bytestream res;
   auto got = SSL_read(ssl, buf.data(), 1023);
   if(got == 0) connected = false;
   else if(got < 0) throw tls_error("Can't read from SSL/TLS.");
   else {
-    buf[got] = '\0';
-    std::string data(buf.data());
-    rdbuffer.str(data);
+    std::span subset(buf.begin(), got);
+    res << subset;
     log << init << "Read " << got << " bytes." << endl;
+    log << init << "Stream size: " << res.size() << endl;
   }
-  return rdbuffer;
+  return res;
 }
 
 tls_connection::~tls_connection() {

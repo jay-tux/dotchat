@@ -1,9 +1,11 @@
 #include <string>
 #include "logger.hpp"
+#include "protocol/message.hpp"
 #include "tls/tls_client_socket.hpp"
 
 using namespace dotchat;
 using namespace dotchat::tls;
+using namespace dotchat::proto;
 using namespace dotchat::values;
 
 const logger::log_source init { "MAIN", cyan };
@@ -29,11 +31,10 @@ int main(int argc, const char **argv) {
     auto context = tls_context(std::string(argv[1]));
     auto socket = tls_client_socket(context);
     auto conn = socket.connect(std::string(argv[2]), portno);
-    std::string msg;
-    msg = conn.read().str();
-    log << init << "Received:" << endl << msg << endl;
-    msg = conn.read().str();
-    log << init << "Received:" << endl << msg << endl;
+    message msg;
+    auto stream = conn.read();
+    stream >> msg;
+    log << init << "Received a message." << endl;
 
     log << init << "Client shutting down..." << endl;
   }
