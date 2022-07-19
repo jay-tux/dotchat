@@ -13,6 +13,7 @@
 
 #define DB_FILE "dotchat.sql_db"
 
+using namespace dotchat;
 using namespace dotchat::server;
 using namespace dotchat::values;
 
@@ -21,12 +22,12 @@ const char * const init_sql =
 #include "dbinit.sql"
 const std::array<const char *, 8> statement_desc = {
     "table: users",
-    "table: users_keys",
+    "table: db_keys",
     "table: channels",
-    "table: channel_users",
+    "table: db_channel_user",
     "table: messages",
-    "user: master",
-    "channel: general",
+    "db_user: master",
+    "db_channel: general",
     "user_channel: master@general"
 };
 const int statement_count = 8;

@@ -46,6 +46,11 @@ public:
   }
 
   bytestream read();
+  inline bool is_open() {
+    return SSL_get_shutdown(ssl) == 0;
+  }
+  inline operator bool() { return is_open(); }
+  void close();
 
   ~tls_connection();
 

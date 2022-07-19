@@ -159,7 +159,7 @@ struct logger {
   }
 
   const logger &operator<<(const endl_t &) const {
-    std::cerr << std::endl;
+    std::cerr << std::endl << std::dec << termcolor::reset;
     return *this;
   }
 

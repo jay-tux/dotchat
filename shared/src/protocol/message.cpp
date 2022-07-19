@@ -24,12 +24,13 @@ using namespace dotchat::values;
 
 const logger::log_source init{"MESSAGE", blue};
 
-#define CMDS X(AUTH) X(EXIT) X(LOAD) X(LOADO) X(LOADM) X(STORE) X(OK) X(ERR)
+#define CMDS X(AUTH) X(EXIT) X(LOAD) X(LOADO) X(LOADM) X(LOADC) X(LEA) X(STORE) X(OK) X(ERR)
 const char *cmd_repr(command_type c) {
 #define X(cmd) case command_type::cmd: return #cmd;
   switch(c) {
     CMDS
-    default: throw msg_error("Unparsable command");
+    default:
+      throw msg_error("Unparsable command");
   }
 #undef X
 }
@@ -37,6 +38,7 @@ const char *cmd_repr(command_type c) {
 command_type parse(const std::string_view &val) {
 #define X(cmd) if(val == #cmd) return command_type::cmd;
   CMDS
+  log << init << "Can't convert `" << val << "` to a valid command." << endl;
   throw msg_error("Unparsable command");
 #undef X
 }
@@ -72,7 +74,7 @@ std::string read_string(std::span<bytestream::byte> v, int &idx) {
     idx++;
   }
   ++idx;
-  if(v[idx] != ' ')
+  if(idx < v.size() && v[idx] != ' ')
     throw msg_error("Required space-separator missing between arguments");
   ++idx;
   return res;
@@ -85,12 +87,12 @@ std::string read_non_string(std::span<bytestream::byte> v, int &idx) {
     ++idx;
   }
 
-  if(idx != v.size() && v[idx] != ' ')
+  if(idx < v.size() && v[idx] != ' ')
     throw msg_error("Invalid character in numerical constant");
   return res;
 }
 
-void read_arg(std::span<bytestream::byte> v, int &idx, char &key, std::string &val) {
+bool read_arg(std::span<bytestream::byte> v, int &idx, char &key, std::string &val) {
   key = v[idx];
   if(key < 'a' || key > 'z') {
     throw msg_error("Invalid key");
@@ -100,7 +102,9 @@ void read_arg(std::span<bytestream::byte> v, int &idx, char &key, std::string &v
   if(v[idx] != ':') throw msg_error("Missing expected separator (:)");
   ++idx;
 
+  bool to_parse = v[idx] != '"';
   val = (v[idx] == '"') ? read_string(v, idx) : read_non_string(v, idx);
+  return to_parse;
 }
 
 std::variant<int, std::string> parse_val(const std::string &val) {
@@ -113,45 +117,25 @@ std::variant<int, std::string> parse_val(const std::string &val) {
   }
 }
 
-template <size_t len>
-void hex_dump(const std::array<char, len> &arr) requires (len >= 1) {
-  log << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(arr[0]);
-  for(size_t i = 1; i < len; i++) {
-    log << " 0x" << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(arr[i]);
-  }
-  log << std::setfill(' ') << std::dec;
-}
-
 message::message(bytestream &source) {
-  log << init << "Started parsing message..." << endl;
   std::array<char, sizeof(uint32_t)> vs = {};
   source >> vs[0] >> vs[1] >> vs[2] >> vs[3];
   auto len = std::bit_cast<uint32_t>(vs);
-  log << init << "  -> Message length is " << len << " (hex dump: ";
-  hex_dump(vs);
-  log << ")" << endl;
 
   std::vector<bytestream::byte> _data_buf;
   _data_buf.reserve(len);
   std::span<bytestream::byte> data(_data_buf.begin(), len);
-  log << init << "  -> Asking bytestream for " << len << " bytes of data." << endl;
-  log << init << "  -> Bytestream remaining size: " << source.size() << endl;
-  size_t curr = source.read(data);
-  log << init << "  -> Actual message length is " << curr << endl;
+  source.read(data);
   if(data[0] != '\n') throw msg_error("Required line-feed missing");
 
   int idx = 1;
+  log << init << "Stream length is " << data.size() << "; current index is " << idx << endl;
   command = read_cmd(data, idx);
-  log << init << "  -> Message command is " << cmd_repr(command) << endl;
 
   char key;
   std::string val;
   while(idx < data.size()) {
-    read_arg(data, idx, key, val);
-    args[key] = parse_val(val);
-    log << init << "  -> Read argument: key = `" << key << "`; value = `";
-    std::visit([](const auto &got){ log << got; }, args[key]);
-    log << "`" << endl;
+    args[key] = read_arg(data, idx, key, val) ? parse_val(val) : val;
   }
 }
 
@@ -163,18 +147,15 @@ void message::write_to(std::ostream &target) const {
     if(std::holds_alternative<int>(v)) msg << std::get<int>(v);
     else msg << '"' << std::get<std::string>(v) << '"';
   }
+  if(args.empty()) msg << " ";
   std::string str = msg.str();
   auto len = static_cast<uint32_t>(str.size());
   auto ls = std::bit_cast<std::array<char, sizeof(uint32_t)>>(len);
   target << ls[0] << ls[1] << ls[2] << ls[3] << '\n' << str;
-  log << init << "Message length should be " << str.size() << " (hex dump: ";
-  hex_dump(ls);
-  log << ")" << endl;
 }
 
 std::string message::as_string() const {
   std::stringstream ss;
-  log << init << "Calling as_string..." << endl;
   write_to(ss);
   return ss.str();
 }

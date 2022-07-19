@@ -62,13 +62,13 @@ struct bytestream {
     return std::bit_cast<raw_t<T>>(val);
   }
 
-  void sanitize() {
+  inline void sanitize() {
     std::vector<byte> holder;
     holder.reserve(data.size() - offset);
     std::memcpy(holder.data(), data.data() + offset, data.size() * sizeof(byte));
   }
 
-  size_t read(const std::span<byte> &span) {
+  inline size_t read(const std::span<byte> &span) {
     size_t i = 0;
     for(; i < span.size() && i + offset < data.size(); i++) {
       span[i] = data[i + offset];
@@ -77,11 +77,23 @@ struct bytestream {
     return i;
   }
 
+  inline void write(const std::span<byte> &span) {
+    data.reserve(data.size() + span.size());
+    for(const auto &v: span) {
+      data.push_back(v);
+    }
+  }
+
+  inline void overwrite(const std::span<byte> &span) {
+    data.clear();
+    write(span);
+  }
+
   [[nodiscard]] constexpr size_t size() const {
     return data.size() - offset;
   }
 
-  inline const void *buffer() {
+  inline const byte *buffer() {
     return data.data();
   }
 

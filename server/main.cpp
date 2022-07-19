@@ -1,7 +1,7 @@
 #include <string>
 #include "logger.hpp"
 #include "tls/tls_server_socket.hpp"
-#include "protocol/message.hpp"
+#include "handle.hpp"
 #include "db/db.hpp"
 
 // TODO (general): protocol implementation
@@ -33,20 +33,23 @@ int main(int argc, const char **argv) {
     auto context = tls_context(std::string(argv[1]), std::string(argv[2]));
     auto socket = tls_server_socket(42069, context);
     log << init << "Waiting for connections..." << endl;
-    // TODO: loop
-    auto conn = socket.accept();
-    message m;
-    m.command = command_type::ERR;
-    m.args = decltype(m.args){
-        {'r', "TEST"},
-        {'v', 123456789},
-        {'o', R"(With\\Backslashes)"},
-        {'p', R"(Extra\"weird\stuffs)"}
-    };
-    log << init << "Sending weird message/command..." << endl;
-    conn << m.as_string() << tls_connection::end_of_msg{};
-    log << init << "Done!" << endl;
-
+    while(true) {
+      auto conn = socket.accept();
+      while(conn) {
+        log << init << " -> reading from stream..." << endl;
+        auto stream = conn.read();
+        log << init << " -> stream size is " << stream.size() << endl;
+        if(stream.size() == 0) {
+          log << init << " -> empty stream; closing connection..." << endl;
+          conn.close();
+          break;
+        }
+        log << init << " -> handling message..." << endl;
+        auto res = handle(stream);
+        log << init << " -> sending response..." << endl;
+        conn << res.as_string() << tls_connection::end_of_msg{};
+      }
+    }
     log << init << "Server shutting down..." << endl;
   }
   catch(const std::exception &exc) {
