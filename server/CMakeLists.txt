@@ -20,7 +20,7 @@ add_executable(${PROJECT_NAME}
         ../shared/src/tls/tls_connection.cpp
         src/db/db.cpp
         main.cpp
-        src/db/db_error.cpp ../shared/src/protocol/message.cpp src/handle.cpp)
+        src/db/db_error.cpp ../shared/src/protocol/message.cpp src/handle.cpp src/thread_connection.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE inc/)
 target_include_directories(${PROJECT_NAME} PRIVATE ../shared/inc/)
 conan_target_link_libraries(${PROJECT_NAME})

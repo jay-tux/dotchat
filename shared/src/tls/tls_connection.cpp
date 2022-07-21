@@ -65,6 +65,7 @@ bytestream tls_connection::read() {
 
 void tls_connection::close() {
   if(ssl != nullptr) {
+    log << init << "Destroying (close) SSL at " << ssl << endl;
     SSL_shutdown(ssl);
     SSL_free(ssl);
     ::close(conn_handle);
@@ -74,6 +75,7 @@ void tls_connection::close() {
 
 tls_connection::~tls_connection() {
   if(ssl != nullptr) {
+    log << init << "Destroying (dtor) SSL at " << ssl << endl;
     SSL_shutdown(ssl);
     SSL_free(ssl);
     ::close(conn_handle);

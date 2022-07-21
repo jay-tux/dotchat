@@ -204,6 +204,7 @@ namespace dotchat::values {
 const static inline logger &log = logger::get();
 const static inline logger::endl_t endl = {};
 const static inline logger::color<logger::color_e::BLUE> blue = {};
+const static inline logger::color<logger::color_e::GREEN> green = {};
 const static inline logger::color<logger::color_e::WHITE> white = {};
 const static inline logger::color<logger::color_e::CYAN> cyan = {};
 const static inline logger::color<logger::color_e::YELLOW> yellow = {};

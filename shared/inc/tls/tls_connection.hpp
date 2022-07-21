@@ -31,13 +31,19 @@ public:
   struct end_of_msg {};
 
   tls_connection(const tls_connection &) = delete;
-  tls_connection(tls_connection &&) = delete;
+  inline tls_connection(tls_connection &&other) noexcept { *this = std::move(other); }
 
   tls_connection &operator=(const tls_connection &) = delete;
-  tls_connection &operator=(tls_connection &&) = delete;
+  inline tls_connection &operator=(tls_connection &&other) noexcept {
+    std::swap(buffer, other.buffer);
+    std::swap(ssl, other.ssl);
+    std::swap(conn_handle, other.conn_handle);
+    std::swap(connected, other.connected);
+    return *this;
+  }
 
-  void operator<<(const end_of_msg);
-  inline bool is_connected() const { return connected; }
+  void operator<<(end_of_msg);
+  [[nodiscard]] inline bool is_connected() const { return connected; }
 
   template <typename T>
   tls_connection &operator<<(const T &val) {
@@ -46,10 +52,10 @@ public:
   }
 
   bytestream read();
-  inline bool is_open() {
-    return SSL_get_shutdown(ssl) == 0;
+  [[nodiscard]] inline bool is_open() const {
+    return ssl != nullptr && SSL_get_shutdown(ssl) == 0;
   }
-  inline operator bool() { return is_open(); }
+  inline explicit operator bool() const { return is_open(); }
   void close();
 
   ~tls_connection();
@@ -58,8 +64,8 @@ private:
   tls_connection(const tls_context &ctxt, int conn_handle);
 
   bytestream buffer = bytestream();
-  SSL *ssl;
-  int conn_handle;
+  SSL *ssl = nullptr;
+  int conn_handle = -1;
   bool connected = false;
   friend tls_server_socket;
   friend tls_client_socket;

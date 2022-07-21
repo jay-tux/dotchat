@@ -16,7 +16,7 @@ namespace dotchat::tls {
 class tls_server_socket;
 }
 
-#include <exception>
+#include <optional>
 #include <utility>
 #include "tls_context.hpp"
 #include "tls_connection.hpp"
@@ -39,7 +39,8 @@ public:
   tls_server_socket &operator=(const tls_server_socket &) = delete;
   tls_server_socket &operator=(tls_server_socket &&other) = delete;
 
-  tls_connection accept();
+  [[nodiscard]] tls_connection accept() const;
+  [[nodiscard]] std::optional<tls_connection> accept_nonblock(int millidelay = 0) const;
 
   ~tls_server_socket();
 

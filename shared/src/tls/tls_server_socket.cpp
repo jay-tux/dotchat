@@ -11,6 +11,7 @@
 #include "logger.hpp"
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <poll.h>
 
 using namespace dotchat;
 using namespace dotchat::tls;
@@ -41,7 +42,7 @@ tls_server_socket::tls_server_socket(uint16_t port, tls_context &ctxt) : port{po
    }
 }
 
-tls_connection tls_server_socket::accept() {
+tls_connection tls_server_socket::accept() const {
   sockaddr_in addr = {};
   uint len = sizeof(addr);
   int client = ::accept(handle, (sockaddr *)&addr, &len);
@@ -50,6 +51,12 @@ tls_connection tls_server_socket::accept() {
   }
   log << init << "Connected to " << inet_ntoa(addr.sin_addr) << "." << endl;
   return { ctxt, client };
+}
+
+std::optional<tls_connection> tls_server_socket::accept_nonblock(int millidelay) const {
+  pollfd fd = { .fd = handle, .events = POLLIN, .revents = 0 };
+  if(auto res = poll(&fd, 1, millidelay); res > 0 && (fd.revents & POLLIN) != 0) return accept();
+  return std::nullopt;
 }
 
 tls_server_socket::~tls_server_socket() {
