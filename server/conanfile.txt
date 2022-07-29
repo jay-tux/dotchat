@@ -1,8 +1,9 @@
 [requires]
 openssl/3.0.3
 termcolor/2.0.0
-sqlite3/3.38.5
-fpgen/1.1.0-clang
+sqlite3/3.37.2
+sqlite_orm/1.7.1
+libbacktrace/cci.20210118
 
 [generators]
 cmake

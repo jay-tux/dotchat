@@ -30,7 +30,9 @@ tls_connection tls_client_socket::connect(const std::string &ip, uint16_t port) 
   log << init << "Attempting connection to " << ip << ":" << port << endl;
   sockaddr_in addr = {
       .sin_family = AF_INET,
-      .sin_port = htons(port)
+      .sin_port = htons(port),
+      .sin_addr = {},
+      .sin_zero = {}
   };
   if(inet_pton(AF_INET, ip.c_str(), &addr.sin_addr) <= 0) {
     throw socket_error("Can't parse IP address...");

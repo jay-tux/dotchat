@@ -119,14 +119,14 @@ struct logger {
 
   template<typename T, uint W>
   struct with_width {
-    explicit with_width(T v) : value{std::move(v)} {}
+    explicit with_width(T v) : value{std::move(v)} { }
 
     const T value;
   };
 
   template<color_e C>
   struct log_source {
-    constexpr log_source(std::string name, color<C> col) noexcept: name{std::move(name)}, col{col} {}
+    constexpr log_source(std::string name, color<C> col) noexcept : name{std::move(name)}, col{col} {}
 
     const std::string name;
     const color<C> col;
@@ -188,6 +188,11 @@ struct logger {
     return (*this) << color<color_e::RESET>{} << "[" << mod<modifier_e::BOLD>{} << source.col
                    << with_width<std::string, 10>(source.name) << color<color_e::RESET>{} << " at "
                    << with_width<decltype(diff), 10>(diff) << "ms]: ";
+  }
+
+  inline static void print_trace(const char *frame) {
+    static log_source err { "ERROR", color<color_e::RED>{} };
+    get() << err << "  In " << frame << endl_t{};
   }
 
   ~logger() = default;

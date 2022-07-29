@@ -13,11 +13,42 @@
 #include "hexgrid.hpp"
 #include "openssl/ssl.h"
 
+#if __unix__
+#include <cerrno>
+#endif
+
 using namespace dotchat;
 using namespace dotchat::tls;
 using namespace dotchat::values;
 
 const logger::log_source init{"TLS_CONN", blue};
+
+void dump_err(const SSL *ssl, int err) {
+  auto code = SSL_get_error(ssl, err);
+#define X(x) case (x): log << init << "Error " << (x) << ": " << #x << endl; break;
+  switch(code) {
+    X(SSL_ERROR_NONE)
+    X(SSL_ERROR_ZERO_RETURN)
+    X(SSL_ERROR_WANT_READ)
+    X(SSL_ERROR_WANT_WRITE)
+    X(SSL_ERROR_WANT_CONNECT)
+    X(SSL_ERROR_WANT_ACCEPT)
+    X(SSL_ERROR_WANT_X509_LOOKUP)
+    X(SSL_ERROR_WANT_ASYNC)
+    X(SSL_ERROR_WANT_ASYNC_JOB)
+    X(SSL_ERROR_WANT_CLIENT_HELLO_CB)
+    X(SSL_ERROR_SYSCALL)
+    X(SSL_ERROR_SSL)
+    default: log << init << "Error " << code << ": unknown?" << endl; break;
+  }
+
+#if __unix__
+  if(code == SSL_ERROR_SYSCALL) {
+    log << init << "  -> inspecting *nix errno..." << endl;
+    log << init << "  -> *nix errno information: " << errno << " ~> " << strerror(errno) << endl;
+  }
+#endif
+}
 
 tls_connection::tls_connection(const tls_context &ctxt, int conn_handle) : ssl{SSL_new(ctxt.get())}, conn_handle{conn_handle} {
   SSL_set_fd(ssl, conn_handle);
@@ -48,9 +79,12 @@ bytestream tls_connection::read() {
   std::vector<byte> buf;
   buf.reserve(1024);
   bytestream res;
-  auto got = SSL_read(ssl, buf.data(), 1023);
-  if(got == 0) connected = false;
-  else if(got < 0) throw tls_error("Can't read from SSL/TLS.");
+  if(auto got = SSL_read(ssl, buf.data(), 1023); got <= 0) {
+    connected = false;
+    log << init << "Got " << got << " from SSL_read." << endl;
+    dump_err(ssl, got);
+    throw tls_error("Can't read from SSL/TLS.");
+  }
   else {
     std::span subset(buf.begin(), got);
     auto grid = hexgrid{subset};

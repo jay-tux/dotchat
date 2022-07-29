@@ -3,9 +3,10 @@
 #include "logger.hpp"
 #include "tls/tls_server_socket.hpp"
 #include "thread_connection.hpp"
+#include "tls/tls_error.hpp"
+#include "db/database.hpp"
 #include <csignal>
 #include <atomic>
-#include "db/db.hpp"
 
 using namespace dotchat;
 using namespace dotchat::tls;
@@ -23,7 +24,7 @@ void help(const char *invoker) {
 }
 
 extern "C" void sig_int(int sig) {
-  log << init << "Signal " << sig << " thrown... Shutting down server..." << endl;
+  log << endl << init << "Signal " << sig << " thrown... Shutting down server..." << endl;
   flag = 1;
 }
 
@@ -37,7 +38,7 @@ int main(int argc, const char **argv) {
 
   log << init << "Starting server..." << endl;
   log << init << "Setting up signal handler..." << endl;
-  struct sigaction params;
+  struct sigaction params{};
   params.sa_flags = 0;
   params.sa_handler = sig_int;
   sigemptyset(&params.sa_mask);
@@ -45,10 +46,13 @@ int main(int argc, const char **argv) {
     log << error << "Failed to install signal handler... Continuing without handler..." << endl;
   }
 
+  log << init << "Starting database service..." << endl;
+  db::database();
+
   try {
     auto context = tls_context(std::string(argv[1]), std::string(argv[2]));
     auto socket = tls_server_socket(42069, context);
-    std::vector<thread_conn> open;
+    std::vector<thread_conn> open; // TODO remove on join
     log << init << "Waiting for connections..." << endl;
     while(flag == 0) {
       if(auto is_ready = socket.accept_nonblock(milli_delay); is_ready.has_value())
@@ -70,9 +74,16 @@ int main(int argc, const char **argv) {
       i++;
     }
   }
+  catch(const tls::tls_error &err) {
+    log << error << red << "An error occurred:" << endl;
+    log << error << red << "  " << err.what() << endl;
+    log << error << red << "OpenSSL error queue: ";
+    tls_context::dump_error_queue([](){ log << endl << error << red << "  "; }, log);
+    log << endl;
+  }
   catch(const std::exception &exc) {
     log << error << red << "An error occurred:" << endl;
-    log << error << red << exc.what() << endl;
+    log << error << red << "  " << exc.what() << endl;
   }
   return 0;
 }

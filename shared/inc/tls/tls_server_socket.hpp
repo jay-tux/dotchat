@@ -25,7 +25,7 @@ namespace dotchat::tls {
 class tls_server_socket {
 public:
   struct socket_error : std::exception {
-    explicit inline socket_error(std::string msg) : std::exception(), msg{std::move(msg)} {}
+    explicit inline socket_error(const std::string &msg) : std::exception(), msg{msg} {}
     [[nodiscard]] inline const char * what() const noexcept override {
       return msg.c_str();
     }

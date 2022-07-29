@@ -26,7 +26,8 @@ tls_server_socket::tls_server_socket(uint16_t port, tls_context &ctxt) : port{po
        .sin_port = htons(port),
        .sin_addr = {
            .s_addr = htonl(INADDR_ANY)
-       }
+       },
+       .sin_zero = {}
    };
    handle = socket(AF_INET, SOCK_STREAM, 0);
    if(handle < 0) {

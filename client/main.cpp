@@ -47,8 +47,8 @@ void run_login(tls_connection &conn) {
   log << init << "Response:" << endl << " -> Command: " << as_str(resp.command) << endl;
   for(const auto &[k, v]: resp.args) {
     log << " -> " << k << ": ";
-    if(resp.is_int(k)) log << resp.get_int(k);
-    else log << resp.get_str(k);
+    if(resp.is_int(k)) log << resp.get_int(k) << " (type: int)";
+    else log << resp.get_str(k) << " (type: string)";
     log << endl;
   }
 
@@ -56,7 +56,7 @@ void run_login(tls_connection &conn) {
     log << init << "Login successful. Trying to log out now..." << endl;
     message m2;
     m2.command = command_type::EXIT;
-    m2.set_arg('t', resp.get_str('t'));
+    m2.set_arg('t', resp.get_int('t'));
     conn << m2.as_string() << tls_connection::end_of_msg{};
     data = conn.read();
     data >> resp;
@@ -90,7 +90,7 @@ int main(int argc, const char **argv) {
   }
   catch(const std::exception &exc) {
     log << error << red << "An error occurred:" << endl;
-    log << error << red << exc.what() << endl;
+    log << error << red << "  " << exc.what() << endl;
   }
   return 0;
 }

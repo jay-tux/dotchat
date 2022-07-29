@@ -10,26 +10,27 @@
 #include "protocol/message_error.hpp"
 #include "handle.hpp"
 #include "logger.hpp"
-#include "data.cpp" // BAD PRACTICE
+#include "db/database.hpp"
+#include "db/types.hpp"
 #include "openssl/rand.h"
 #include <sstream>
-#include <iomanip>
+#include <string>
 
 using namespace dotchat;
 using namespace dotchat::values;
 using namespace dotchat::tls;
 using namespace dotchat::server;
 using namespace dotchat::proto;
+using namespace sqlite_orm;
 const logger::log_source init { "HANDLER", grey };
 const logger::log_source error { "ERROR", red };
 
 using arg_coll = decltype(message::args);
-using fptr_t = message (*)(const arg_coll &);
 
 template <typename T>
 concept is_arg_type = std::same_as<T, int> || std::same_as<T, std::string> || std::same_as<T, std::vector<int>>;
 
-std::variant<message, std::vector<int>> parse_vec(const std::string &val, const message &err) {
+either<message, std::vector<int>> parse_vec(const std::string &val, const message &err) {
   std::vector<int> res;
   std::stringstream buf;
   buf.str(val);
@@ -46,7 +47,7 @@ std::variant<message, std::vector<int>> parse_vec(const std::string &val, const 
 }
 
 template <is_arg_type T>
-std::variant<message, T> require_arg(char key, arg_coll &args) {
+either<message, T> require_arg(char key, arg_coll &args) {
   if(!args.contains(key)) {
     message m;
     m.command = command_type::ERR;
@@ -64,38 +65,33 @@ std::variant<message, T> require_arg(char key, arg_coll &args) {
 
   const auto &val = args[key];
   if constexpr(std::same_as<T, int>) {
-    if(std::holds_alternative<int>(val)) return std::get<int>(val);
+    if(val.holds<int>()) return val.get<int>();
     else return m;
   }
   else if constexpr(std::same_as<T, std::string>) {
-    if(std::holds_alternative<std::string>(val)) return std::get<std::string>(val);
+    if(val.holds<std::string>()) return val.get<std::string>();
     else return m;
   }
   else {
-    if(std::holds_alternative<std::string>(val)) {
-      return parse_vec(std::get<std::string>(val), m);
+    if(val.holds<std::string>()) {
+      return parse_vec(val.get<std::string>(), m);
     } else {
       return m;
     }
   }
 }
 
-std::string gen_key() {
-  std::array<bytestream::byte, 256> data = {};
-  RAND_bytes(data.data(), 256);
-  std::stringstream res;
-  res << 7; // TODO REMOVE
-  for(int i = 0; i < 256; i++) {
-    res << std::hex << (int)(data[i]);
-  }
-  return res.str();
+int gen_key() {
+  std::array<bytestream::byte, sizeof(int)> data = {};
+  RAND_bytes(data.data(), sizeof(int));
+  return std::bit_cast<int>(data) > 0 ? -std::bit_cast<int>(data) : std::bit_cast<int>(data);
 }
 
 #define or_get(val, out) \
-  if(std::holds_alternative<decltype(out)>(val)) \
-    (out) = std::get<decltype(out)>(val); \
+  if((val).holds<decltype(out)>()) \
+    (out) = (val).get<decltype(out)>(); \
   else \
-    return std::get<message>(val)
+    return (val).get<message>()
 
 message login(arg_coll &args) {
   std::string uname;
@@ -105,47 +101,65 @@ message login(arg_coll &args) {
   got = require_arg<std::string>('p', args);
   or_get(got, pass);
 
-  if(auto user = find_user(uname); user.has_value()) {
-    if(user.value().pass == pass) {
-      std::string key = gen_key();
-      add_key(user.value().id, key);
-      message ok;
-      ok.command = command_type::OK;
-      ok.set_arg('t', key);
-      log << init << "[LOGIN] succeeded. Generated key is " << key << endl;
-      return ok;
-    } else {
-      message err;
-      err.command = command_type::ERR;
-      err.set_arg('r', "Invalid pass");
-      log << init << "[LOGIN] failed. Expected pass " << user.value().pass << ", got " << pass << endl;
-      return err;
-    }
+  if(auto u = db::database().get_all<db::user>(where(c(&db::user::name) == uname)); u.empty()) {
+    return message {
+      command_type::ERR,
+      std::pair{'r', "No such db_user"}
+    };
+  }
+  else if(u[0].pass == pass) {
+    auto key = gen_key();
+    using namespace std::chrono_literals;
+    db::database().replace(db::session_key{ key, u[0].id, db::now_plus(1h) });
+    return message {
+      command_type::OK,
+      std::pair{'t', key}
+    };
+  }
+  else {
+    return message {
+      command_type::ERR,
+      std::pair{'r', "Invalid password"}
+    };
+  }
+}
+
+std::optional<db::user> check_session_key(int key) {
+  if(auto tmp = db::database().get_optional<db::session_key>(key); tmp.has_value() && tmp.value().valid_until >= db::now()) {
+    return db::database().get_optional<db::user>(tmp.value().user);
   }
 
-  message err;
-  err.command = command_type::ERR;
-  err.set_arg('r', "No such db_user");
-  log << init << "[LOGIN] failed. User " << uname << " does not exist." << endl;
-  return err;
+  auto now = db::now();
+  log << init << "Failed to match " << key << " (timestamp: " << now << ") with any of:" << endl;
+  for(const auto &v: db::database().get_all<db::session_key>()) {
+    log << init << "  " << v.key << " (for " << v.user << ";";
+    if(v.key == key) log << "; matches";
+    log << " valid until " << v.valid_until;
+    if(v.valid_until < now) log << "; expired";
+    log << ")" << endl;
+  }
+
+  return std::nullopt;
 }
 
 message logout(arg_coll &args) {
-  std::string token;
-  auto got = require_arg<std::string>('t', args);
+  int token;
+  auto got = require_arg<int>('t', args);
   or_get(got, token);
 
-  if(!session_keys.contains(token)) {
-    message err;
-    err.command = command_type::ERR;
-    err.set_arg('r', "Invalid token");
-    return err;
+  auto user = check_session_key(token);
+
+  if(user.has_value()) {
+    db::database().remove_all<db::session_key>(where(c(&db::session_key::key) = user.value().id));
+    return message {
+      command_type::OK
+    };
   }
   else {
-    rm_keys_for(session_keys[token].user);
-    message ok;
-    ok.command = command_type::OK;
-    return ok;
+    return message {
+      command_type::ERR,
+      std::pair{'r', "Invalid token"}
+    };
   }
 }
 

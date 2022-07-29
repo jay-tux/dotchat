@@ -43,7 +43,7 @@ command_type parse(const std::string_view &val) {
 #undef X
 }
 
-command_type read_cmd(std::span<bytestream::byte> v, int &idx) {
+command_type read_cmd(std::span<bytestream::byte> v, size_t &idx) {
   std::string val;
   for(; idx < v.size() && v[idx] != ' '; idx++) {
     if(v[idx] < 'A' || v[idx] > 'Z') {
@@ -55,7 +55,7 @@ command_type read_cmd(std::span<bytestream::byte> v, int &idx) {
   return parse(val);
 }
 
-std::string read_string(std::span<bytestream::byte> v, int &idx) {
+std::string read_string(std::span<bytestream::byte> v, size_t &idx) {
   std::string res;
   ++idx;
   bool prev_bs = false;
@@ -80,10 +80,15 @@ std::string read_string(std::span<bytestream::byte> v, int &idx) {
   return res;
 }
 
-std::string read_non_string(std::span<bytestream::byte> v, int &idx) {
+inline bool valid_int_char(auto c2) {
+  auto c = static_cast<char>(c2);
+  return (c == '-') || (c == '+') || (c >= '0' && c <= '9');
+}
+
+std::string read_non_string(std::span<bytestream::byte> v, size_t &idx) {
   std::string res;
-  while(idx < v.size() && v[idx] >= '0' && v[idx] <= '9') {
-    res += v[idx];
+  while(idx < v.size() && valid_int_char(v[idx])) {
+    res += static_cast<char>(v[idx]);
     ++idx;
   }
 
@@ -92,8 +97,8 @@ std::string read_non_string(std::span<bytestream::byte> v, int &idx) {
   return res;
 }
 
-bool read_arg(std::span<bytestream::byte> v, int &idx, char &key, std::string &val) {
-  key = v[idx];
+bool read_arg(std::span<bytestream::byte> v, size_t &idx, char &key, std::string &val) {
+  key = static_cast<char>(v[idx]);
   if(key < 'a' || key > 'z') {
     throw msg_error("Invalid key");
   }
@@ -107,8 +112,8 @@ bool read_arg(std::span<bytestream::byte> v, int &idx, char &key, std::string &v
   return to_parse;
 }
 
-std::variant<int, std::string> parse_val(const std::string &val) {
-  if(val[0] >= '0' && val[0] <= '9') {
+message::arg_type parse_val(const std::string &val) {
+  if(valid_int_char(val[0])) {
     int res = std::stoi(val);
     return { res };
   }
@@ -128,14 +133,15 @@ message::message(bytestream &source) {
   source.read(data);
   if(data[0] != '\n') throw msg_error("Required line-feed missing");
 
-  int idx = 1;
+  size_t idx = 1;
   log << init << "Stream length is " << data.size() << "; current index is " << idx << endl;
   command = read_cmd(data, idx);
 
   char key;
   std::string val;
   while(idx < data.size()) {
-    args[key] = read_arg(data, idx, key, val) ? parse_val(val) : val;
+    bool requires_parsing = read_arg(data, idx, key, val);
+    args[key] = requires_parsing ? parse_val(val) : val;
   }
 }
 
@@ -144,8 +150,8 @@ void message::write_to(std::ostream &target) const {
   msg << cmd_repr(command);
   for(const auto &[k,v] : args) {
     msg << " " << k << ":";
-    if(std::holds_alternative<int>(v)) msg << std::get<int>(v);
-    else msg << '"' << std::get<std::string>(v) << '"';
+    if(v.holds<int>()) msg << v.get<int>();
+    else msg << '"' << v.get<std::string>() << '"';
   }
   if(args.empty()) msg << " ";
   std::string str = msg.str();
