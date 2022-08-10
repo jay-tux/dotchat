@@ -15,12 +15,6 @@ void help(const char *invoker) {
   log << "Usage: " << invoker << " <certificate PEM file> <IP address> <port number>" << endl;
 }
 
-std::string as_str(command_type c) {
-  if(c == command_type::OK) return "OK";
-  else if(c == command_type::ERR) return "ERR";
-  else return "???";
-}
-
 void run_login(tls_connection &conn) {
   std::cout << "Username: ";
   std::string name;
@@ -28,46 +22,45 @@ void run_login(tls_connection &conn) {
   std::cout << "Password: ";
   std::string pass;
   std::cin >> pass;
-  log << init << "Username: `" << name << "` (length " << name.size() << "); hex dump: ";
-  for(const auto c : name) log << "0x" << std::hex << (int)c << " ";
-  log << endl;
-  log << init << "Password: `" << pass << "` (length " << pass.size() << "); hex dump: ";
-  for(const auto c : pass) log << "0x" << std::hex << (int)c << " ";
-  log << endl;
 
-  message m1;
-  m1.command = command_type::AUTH;
-  m1.set_arg('u', name);
-  m1.set_arg('p', pass);
-  conn << m1.as_string() << tls_connection::end_of_msg{};
+  bytestream strm;
+  strm << message("login",
+                  std::pair<std::string, std::string>{ "user", name },
+                  std::pair<std::string, std::string>{ "pass", pass }
+                  );
+  conn.send(strm);
 
-  message resp;
-  bytestream data = conn.read();
-  data >> resp;
-  log << init << "Response:" << endl << " -> Command: " << as_str(resp.command) << endl;
-  for(const auto &[k, v]: resp.args) {
-    log << " -> " << k << ": ";
-    if(resp.is_int(k)) log << resp.get_int(k) << " (type: int)";
-    else log << resp.get_str(k) << " (type: string)";
-    log << endl;
-  }
-
-  if(resp.command == command_type::OK) {
-    log << init << "Login successful. Trying to log out now..." << endl;
-    message m2;
-    m2.command = command_type::EXIT;
-    m2.set_arg('t', resp.get_int('t'));
-    conn << m2.as_string() << tls_connection::end_of_msg{};
-    data = conn.read();
-    data >> resp;
-    log << init << "Response: " << endl << " -> Command: " << as_str(resp.command) << endl;
-    for(const auto &[k, v]: resp.args) {
-      log << " -> " << k << ": ";
-      if(resp.is_int(k)) log << resp.get_int(k);
-      else log << resp.get_str(k);
-      log << endl;
+  strm = conn.read();
+  message resp(strm);
+  if(resp.get_command() == "ok") {
+    log << init << "Attempting to extract token..." << endl;
+    if(resp.map().contains("token") && resp.map().type("token") == dotchat::proto::_intl_::matching_enum<int32_t>::val) {
+      int32_t token = resp.map().as<int32_t>("token");
+      log << init << "Token: " << token << endl;
+      log << init << "Attempting logout." << endl;
+      bytestream logout;
+      logout << message("logout",
+                        std::pair<std::string, int32_t>{ "token", token }
+                        );
+      conn.send(logout);
+      logout = conn.read();
+      resp = message(logout);
+      if(resp.get_command() == "ok") {
+        log << init << "Success! Byeeeee" << endl;
+      }
+      else {
+        log << init << "Such a fail! They didn't log out :(" << endl;
+      }
+    }
+    else {
+      log << init << "Oops. Couldn't get token :(" << endl;
     }
   }
+  else {
+    log << init << "Got error response :(" << endl;
+  }
+
+  conn.close();
 }
 
 int main(int argc, const char **argv) {

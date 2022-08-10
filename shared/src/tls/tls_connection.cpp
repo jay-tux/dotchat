@@ -97,6 +97,12 @@ bytestream tls_connection::read() {
   return res;
 }
 
+void tls_connection::send(bytestream &strm) {
+  log << init << "Sending " << strm.size() << " bytes to TLS..." << endl;
+  buffer = std::move(strm);
+  (*this) << end_of_msg{};
+}
+
 void tls_connection::close() {
   if(ssl != nullptr) {
     log << init << "Destroying (close) SSL at " << ssl << endl;

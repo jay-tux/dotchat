@@ -8,160 +8,277 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include <bit>
-#include <string>
-#include <span>
-#include <sstream>
 #include <array>
+#include <arpa/inet.h>
 
 #include "logger.hpp"
+#include "tls/tls_bytestream.hpp"
+#include "tls/tls_connection.hpp"
+#include "dynsize_array.hpp"
 #include "protocol/message.hpp"
-#include "protocol/message_error.hpp"
 
 using namespace dotchat;
 using namespace dotchat::tls;
 using namespace dotchat::proto;
 using namespace dotchat::values;
 
+#define TYPES X(INT8) X(INT16) X(INT32) X(UINT8) X(UINT16) X(UINT32)\
+  X(CHAR) X(STRING) X(SUB_OBJECT) X(LIST)
+
 const logger::log_source init{"MESSAGE", blue};
 
-#define CMDS X(AUTH) X(EXIT) X(LOAD) X(LOADO) X(LOADM) X(LOADC) X(LEA) X(STORE) X(OK) X(ERR)
-const char *cmd_repr(command_type c) {
-#define X(cmd) case command_type::cmd: return #cmd;
-  switch(c) {
-    CMDS
+inline const char *type_to_str(message::arg_type a){
+#define X(v) case message::arg_type::v: return #v;
+  switch(a) {
+    TYPES
+    default: return "???";
+  }
+#undef X
+}
+
+std::string read_string(bytestream &stream) {
+  uint8_t size;
+  stream >> size;
+  log << init << "Parser:   reading string of length " << (int)size << "." << endl;
+  dyn_size_array<char> arr(size + 1);
+  for(uint8_t i = 0; i < size; i++) {
+    stream >> arr[i];
+  }
+  arr[size] = '\0';
+  return { arr.buf };
+}
+
+uint32_t reorder(uint32_t tmp) { return ntohl(tmp); }
+int32_t reorder(int32_t v) {
+  return std::bit_cast<int32_t>(reorder(std::bit_cast<uint32_t>(v)));
+}
+
+uint16_t reorder(uint16_t tmp) { return ntohs(tmp); }
+int16_t reorder(int16_t v) {
+  return std::bit_cast<int16_t>(reorder(std::bit_cast<uint16_t>(v)));
+}
+
+template <typename T>
+concept requires_reorder =
+    std::same_as<T, int16_t> || std::same_as<T, uint16_t> ||
+    std::same_as<T, int32_t> || std::same_as<T, uint32_t>;
+
+template <dotchat::proto::_intl_::is_repr T>
+T read_single(bytestream &stream) {
+  log << init << "Parser:   reading " << typeid(T).name() << "." << endl;
+  std::array<bytestream::byte, sizeof(T)> arr = {};
+  stream.read(arr);
+  T val = std::bit_cast<T>(arr);
+
+  if constexpr (requires_reorder<T>) {
+    val = reorder(val);
+  }
+
+  return val;
+}
+
+message::arg_obj read_arg_obj(bytestream &stream);
+message::arg read_value(message::arg_type type, bytestream &stream);
+
+template <>
+std::string read_single<std::string>(bytestream &stream) {
+  return read_string(stream);
+}
+
+template<>
+message::arg_obj read_single<message::arg_obj>(bytestream &stream) {
+  return read_arg_obj(stream);
+}
+
+template <>
+message::arg_list read_single<message::arg_list>(bytestream &stream) {
+  uint8_t contained;
+  stream >> contained;
+  auto type = static_cast<message::arg_type>(contained);
+  auto size = read_single<uint32_t>(stream);
+
+  message::arg_list list;
+  for(size_t i = 0; i < size; i++) {
+    list.push_back(read_value(type, stream));
+  }
+  return list;
+}
+
+
+message::arg read_value(message::arg_type type, bytestream &stream) {
+#define X(v) case message::arg_type::v: return message::arg{ read_single<typename dotchat::proto::_intl_::matching_type_t<message::arg_type::v>>(stream) };
+  switch(type) {
+    TYPES
+
     default:
-      throw msg_error("Unparsable command");
+      throw message_error("Invalid type to read.");
   }
 #undef X
 }
 
-command_type parse(const std::string_view &val) {
-#define X(cmd) if(val == #cmd) return command_type::cmd;
-  CMDS
-  log << init << "Can't convert `" << val << "` to a valid command." << endl;
-  throw msg_error("Unparsable command");
+message::arg_obj read_arg_obj(bytestream &stream) {
+  message::arg_obj res;
+  uint8_t count;
+  stream >> count;
+  log << init << "Parser: current object has " << (int)count << " keys." << endl;
+  for(uint8_t i = 0; i < count; i++) {
+    std::string key = read_string(stream);
+    uint8_t type_i;
+    stream >> type_i;
+    auto type = static_cast<message::arg_type>(type_i);
+    log << init << "  Parser: value " << (int)i << "; key = " << key
+        << "; type = " << type_to_str(type) << "." << endl;
+    auto value = read_value(type, stream);
+    res.set({ key, value });
+  }
+  return res;
+}
+
+void dump_args(const message::arg_obj &obj, int indent);
+void dump_list(const message::arg_list &list, int indent);
+
+void dump_val(const message::arg &a, int indent) {
+  auto simple_dumper = [](const auto &val) {
+    log << val << endl;
+  };
+
+  log << "[" << type_to_str(a.type()) << "]: ";
+#define SUBSET X(INT8) X(INT16) X(INT32) X(UINT8) X(UINT16) X(UINT32) X(CHAR) X(STRING)
+  switch(a.type()) {
+#define X(v) case message::arg_type::v: simple_dumper(a.get<message::arg_type::v>()); break;
+    SUBSET
+
+    case message::arg_type::SUB_OBJECT:
+      dump_args(static_cast<message::arg_obj>(a), indent + 2);
+      break;
+    case message::arg_type::LIST:
+      dump_list(static_cast<message::arg_list>(a), indent);
+      break;
+    default:
+      log << "???" << endl;
+      break;
+  }
 #undef X
 }
 
-command_type read_cmd(std::span<bytestream::byte> v, size_t &idx) {
-  std::string val;
-  for(; idx < v.size() && v[idx] != ' '; idx++) {
-    if(v[idx] < 'A' || v[idx] > 'Z') {
-      throw msg_error("Unparsable command");
-    }
-    val += static_cast<char>(v[idx]);
-  }
-  idx++;
-  return parse(val);
-}
-
-std::string read_string(std::span<bytestream::byte> v, size_t &idx) {
-  std::string res;
-  ++idx;
-  bool prev_bs = false;
-  while(idx < v.size()) {
-    if(v[idx] == '"') {
-      if(prev_bs) res += '"';
-      else break;
-    }
-    else {
-      if(prev_bs) res += '\\';
-
-      prev_bs = false;
-      if(v[idx] == '\\') prev_bs = true;
-      else res += v[idx];
-    }
-    idx++;
-  }
-  ++idx;
-  if(idx < v.size() && v[idx] != ' ')
-    throw msg_error("Required space-separator missing between arguments");
-  ++idx;
-  return res;
-}
-
-inline bool valid_int_char(auto c2) {
-  auto c = static_cast<char>(c2);
-  return (c == '-') || (c == '+') || (c >= '0' && c <= '9');
-}
-
-std::string read_non_string(std::span<bytestream::byte> v, size_t &idx) {
-  std::string res;
-  while(idx < v.size() && valid_int_char(v[idx])) {
-    res += static_cast<char>(v[idx]);
-    ++idx;
-  }
-
-  if(idx < v.size() && v[idx] != ' ')
-    throw msg_error("Invalid character in numerical constant");
-  return res;
-}
-
-bool read_arg(std::span<bytestream::byte> v, size_t &idx, char &key, std::string &val) {
-  key = static_cast<char>(v[idx]);
-  if(key < 'a' || key > 'z') {
-    throw msg_error("Invalid key");
-  }
-  ++idx;
-
-  if(v[idx] != ':') throw msg_error("Missing expected separator (:)");
-  ++idx;
-
-  bool to_parse = v[idx] != '"';
-  val = (v[idx] == '"') ? read_string(v, idx) : read_non_string(v, idx);
-  return to_parse;
-}
-
-message::arg_type parse_val(const std::string &val) {
-  if(valid_int_char(val[0])) {
-    int res = std::stoi(val);
-    return { res };
-  }
-  else {
-    return { val };
+void dump_list(const message::arg_list &list, int indent) {
+  log << endl;
+  for(size_t i = 0; i < list.size(); i++) {
+    log << init << " ";
+    for(int j = 0; j < indent; j++) log << " ";
+    dump_val(list[i], indent + 1);
+    log << endl;
   }
 }
 
-message::message(bytestream &source) {
-  std::array<char, sizeof(uint32_t)> vs = {};
-  source >> vs[0] >> vs[1] >> vs[2] >> vs[3];
-  auto len = std::bit_cast<uint32_t>(vs);
-
-  std::vector<bytestream::byte> _data_buf;
-  _data_buf.reserve(len);
-  std::span<bytestream::byte> data(_data_buf.begin(), len);
-  source.read(data);
-  if(data[0] != '\n') throw msg_error("Required line-feed missing");
-
-  size_t idx = 1;
-  log << init << "Stream length is " << data.size() << "; current index is " << idx << endl;
-  command = read_cmd(data, idx);
-
-  char key;
-  std::string val;
-  while(idx < data.size()) {
-    bool requires_parsing = read_arg(data, idx, key, val);
-    args[key] = requires_parsing ? parse_val(val) : val;
+void dump_args(const message::arg_obj &obj, int indent = 2) {
+  for(const auto &key: obj) {
+    log << init;
+    for(int i = 0; i < indent; i++) log << " ";
+    log << key << ": ";
+    dump_val(obj[key], indent);
   }
 }
 
-void message::write_to(std::ostream &target) const {
-  std::stringstream msg("");
-  msg << cmd_repr(command);
-  for(const auto &[k,v] : args) {
-    msg << " " << k << ":";
-    if(v.holds<int>()) msg << v.get<int>();
-    else msg << '"' << v.get<std::string>() << '"';
-  }
-  if(args.empty()) msg << " ";
-  std::string str = msg.str();
-  auto len = static_cast<uint32_t>(str.size());
-  auto ls = std::bit_cast<std::array<char, sizeof(uint32_t)>>(len);
-  target << ls[0] << ls[1] << ls[2] << ls[3] << '\n' << str;
+message::message(bytestream &stream) {
+  byte b1;
+  byte b2;
+  stream >> b1 >> b2;
+
+  if(!magic_number_match(b1, b2))
+    throw message_error("Can't parse message (missing magic number)");
+
+  log << init << "Parser: magic number matches." << endl;
+
+  stream >> protocol_major >> protocol_minor;
+  if(protocol_major > preferred_major_version())
+    throw message_error("Can't parse message (incompatible major version)");
+  if(protocol_major == preferred_major_version() && protocol_minor > preferred_minor_version())
+    throw message_error("Can't parse message (incompatible minor version)");
+
+  log << init << "Parser: protocol version " << protocol_major << "."
+      << protocol_minor << "." << endl;
+
+  cmd = read_string(stream);
+  log << init << "Parser: command is " << cmd << "." << endl;
+
+  args = read_arg_obj(stream);
+  log << init << "Parser: finished. Dumping arguments..." << endl;
+
+  dump_args(args);
 }
 
-std::string message::as_string() const {
-  std::stringstream ss;
-  write_to(ss);
-  return ss.str();
+
+uint16_t reorder_send(uint16_t v) { return htons(v); }
+int16_t reorder_send(int16_t v) {
+  return std::bit_cast<int16_t>(reorder_send(std::bit_cast<uint16_t>(v)));
+}
+uint32_t reorder_send(uint32_t v) { return htonl(v); }
+int32_t reorder_send(int32_t v) {
+  return std::bit_cast<int32_t>(reorder_send(std::bit_cast<uint32_t>(v)));
+}
+
+void send_one(const message::arg_obj &obj, bytestream &strm);
+void send_list(const message::arg_list &l, bytestream &strm);
+
+void send_val(int8_t v, bytestream &strm) { strm << v; }
+void send_val(uint8_t v, bytestream &strm) { strm << v; }
+void send_val(int16_t v, bytestream &strm) { strm << reorder_send(v); }
+void send_val(uint16_t v, bytestream &strm) { strm << reorder_send(v); }
+void send_val(int32_t v, bytestream &strm) { strm << reorder_send(v); }
+void send_val(uint32_t v, bytestream &strm) { strm << reorder_send(v); }
+void send_val(char v, bytestream &strm) { strm << v; }
+void send_val(std::string_view v, bytestream &strm) {
+  if(v.size() > 0xFF) throw message_error("String too long to send.");
+  strm << (message::byte)v.size();
+  for(const char &c: v) strm << c;
+}
+
+void send_arg(const message::arg &a, bytestream &strm) {
+  strm << (int8_t)a.type();
+#define X(v) case message::arg_type::v: send_val(a.get<message::arg_type::v>(), strm); break;
+  switch(a.type()) {
+    SUBSET
+
+    case message::arg_type::LIST:
+      send_list(static_cast<message::arg_list>(a), strm);
+      break;
+    case message::arg_type::SUB_OBJECT:
+      send_one(static_cast<message::arg_obj>(a), strm);
+      break;
+
+    default:
+      throw message_error("Can't send this object.");
+  }
+}
+
+void send_one(const message::arg_obj &obj, bytestream &strm) {
+  if(obj.size() > 0xFF) throw message_error("Too much arguments.");
+  strm << (message::byte)obj.size();
+  for(const auto &key: obj) {
+    send_val(key, strm);
+    send_arg(obj[key], strm);
+  }
+}
+
+void send_list(const message::arg_list &l, bytestream &strm) {
+  strm << (int8_t)l.type();
+  send_val((uint32_t)l.size(), strm);
+  for(const auto v: l) {
+    send_arg(v, strm);
+  }
+}
+
+void message::send_to(tls::bytestream &strm) const {
+  log << init << "Sending message..." << endl;
+  log << init << "  -> command: " << cmd << endl;
+  log << init << "  -> arguments: " << endl;
+  dump_args(args, 4);
+
+  strm << (byte)0x2E << (byte)0x43
+       << preferred_major_version() << preferred_minor_version();
+
+  send_val(cmd, strm);
+
+  send_one(args, strm);
 }

@@ -51,7 +51,9 @@ public:
     return *this;
   }
 
+  void send(bytestream &strm);
   bytestream read();
+
   [[nodiscard]] inline bool is_open() const {
     return ssl != nullptr && SSL_get_shutdown(ssl) == 0;
   }

@@ -39,7 +39,9 @@ void thread_conn::callback() {
         log << init << " -> handling message..." << endl;
         auto res = handle(stream);
         log << init << " -> sending response..." << endl;
-        conn << res.as_string() << tls_connection::end_of_msg{};
+        bytestream strm;
+        strm << res;
+        conn.send(strm);
 
         if (state == thread_state::STOPPING) {
           conn.close();
@@ -58,6 +60,7 @@ void thread_conn::callback() {
   catch(const std::exception &exc) {
     log << error << red << "An error occurred:" << endl;
     log << error << red << "  " << exc.what() << endl;
+    conn.close();
   }
 
   log << init << "Thread (ID: " << id << ") finished." << endl;
