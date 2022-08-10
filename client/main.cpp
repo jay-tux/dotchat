@@ -31,8 +31,7 @@ void run_login(tls_connection &conn) {
   conn.send(strm);
 
   strm = conn.read();
-  message resp(strm);
-  if(resp.get_command() == "ok") {
+  if(message resp(strm); resp.get_command() == "ok") {
     log << init << "Attempting to extract token..." << endl;
     if(resp.map().contains("token") && resp.map().type("token") == dotchat::proto::_intl_::matching_enum<int32_t>::val) {
       int32_t token = resp.map().as<int32_t>("token");
@@ -46,7 +45,7 @@ void run_login(tls_connection &conn) {
       logout = conn.read();
       resp = message(logout);
       if(resp.get_command() == "ok") {
-        log << init << "Success! Byeeeee" << endl;
+        log << init << "Success! Bye" << endl;
       }
       else {
         log << init << "Such a fail! They didn't log out :(" << endl;

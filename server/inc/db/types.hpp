@@ -12,6 +12,7 @@
 #define DOTCHAT_SERVER_TYPES_HPP
 
 #include <string>
+#include <chrono>
 #include <optional>
 
 namespace dotchat::server::db {
