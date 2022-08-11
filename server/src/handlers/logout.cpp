@@ -12,6 +12,8 @@
 
 using namespace dotchat::server;
 using namespace dotchat::proto;
+using namespace dotchat::proto::requests;
+using namespace dotchat::proto::responses;
 using namespace sqlite_orm;
 
 /*
@@ -21,10 +23,19 @@ using namespace sqlite_orm;
  *   - token: int32 ~ token
  */
 
-handlers::callback_t handlers::logout = [](const arg_obj_t &args) -> message {
-  auto token = require_arg<int32_t>("token", args);
-  auto user = check_session_key(token);
+/*
+ * --- LOGOUT SUCCESS RESPONSE ---
+ * Command: ok
+ */
 
-  db::database().remove_all<db::session_key>(sqlite_orm::where(c(&db::session_key::user) == user.id));
-  return message("ok");
+handlers::callback_t handlers::logout = [](const message &m) -> message {
+  return reply_to<logout_request, logout_response>(m,
+      [](const logout_request &req) -> logout_response {
+        auto user = check_session_key(req.token);
+        db::database().remove_all<db::session_key>(
+            sqlite_orm::where(c(&db::session_key::user) == user.id)
+        );
+        return logout_response{};
+      }
+  );
 };

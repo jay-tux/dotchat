@@ -21,7 +21,9 @@ add_executable(${PROJECT_NAME}
         ../shared/src/tls/tls_connection.cpp
         main.cpp
         ../shared/src/protocol/message.cpp src/handle.cpp src/thread_connection.cpp
-        ../shared/src/protocol/message_intl.cpp src/handlers/login.cpp src/handlers/logout.cpp)
+        ../shared/src/protocol/message_intl.cpp
+        src/handlers/login.cpp src/handlers/logout.cpp src/handlers/channels.cpp
+        ../shared/src/protocol/requests.cpp ../shared/src/protocol/responses.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE inc/)
 target_include_directories(${PROJECT_NAME} PRIVATE ../shared/inc/)

@@ -13,10 +13,13 @@
 #include "handlers/handlers.hpp"
 #include "db/database.hpp"
 #include "handlers/helpers.hpp"
+#include "protocol/helpers.hpp"
 
 using namespace sqlite_orm;
 using namespace dotchat::tls;
 using namespace dotchat::proto;
+using namespace dotchat::proto::requests;
+using namespace dotchat::proto::responses;
 using namespace dotchat::server;
 
 int gen_key() {
@@ -33,17 +36,26 @@ int gen_key() {
  *   - pass: string ~ password
  */
 
-handlers::callback_t handlers::login = [](const arg_obj_t &args) -> message {
+/*
+ *  --- LOGIN SUCCESS RESPONSE ---
+ *  Command: ok
+ *  Arguments:
+ *   - token: int32_t ~ session key
+ */
+
+handlers::callback_t handlers::login = [](const message &m) -> message {
   using namespace std::chrono_literals;
 
-  auto user = require_arg<std::string>("user", args);
-  auto pass = require_arg<std::string>("pass", args);
-  auto res = db::database().get_all<db::user>(where(c(&db::user::name) == user));
-  if(res.empty()) throw proto_error("User `" + user + "` doesn't exist.");
-  if(res[0].pass != pass) throw proto_error("Password for `" + pass + "` incorrect.");
+  return reply_to<login_request, login_response>(m,
+      [](const login_request &l) -> login_response {
+        auto res = db::database().get_all<db::user>(where(c(&db::user::name) == l.user));
+        if(res.empty()) throw proto_error("User `" + l.user + "` doesn't exist.");
+        if(res[0].pass != l.pass) throw proto_error("Password for `" + l.user + "` incorrect.");
 
-  int uid = res[0].id;
-  auto key = gen_key();
-  db::database().replace(db::session_key{ key, uid, db::now_plus(1h) });
-  return message("ok", std::pair<std::string, int32_t>{ "token", key });
+        int uid = res[0].id;
+        int32_t key = gen_key();
+        db::database().replace(db::session_key{ key, uid, db::now_plus(1h) });
+        return login_response{ {}, key /* token */ };
+      }
+  );
 };

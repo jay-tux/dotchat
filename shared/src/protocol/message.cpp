@@ -25,7 +25,7 @@ using namespace dotchat::values;
 #define TYPES X(INT8) X(INT16) X(INT32) X(UINT8) X(UINT16) X(UINT32)\
   X(CHAR) X(STRING) X(SUB_OBJECT) X(LIST)
 
-const logger::log_source init{"MESSAGE", blue};
+//const static logger::log_source init{"MESSAGE", blue};
 
 inline const char *type_to_str(message::arg_type a){
 #define X(v) case message::arg_type::v: return #v;
@@ -39,7 +39,6 @@ inline const char *type_to_str(message::arg_type a){
 std::string read_string(bytestream &stream) {
   uint8_t size;
   stream >> size;
-  log << init << "Parser:   reading string of length " << (int)size << "." << endl;
   dyn_size_array<char> arr(size + 1);
   for(uint8_t i = 0; i < size; i++) {
     stream >> arr[i];
@@ -65,7 +64,6 @@ concept requires_reorder =
 
 template <dotchat::proto::_intl_::is_repr T>
 T read_single(bytestream &stream) {
-  log << init << "Parser:   reading " << typeid(T).name() << "." << endl;
   std::array<bytestream::byte, sizeof(T)> arr = {};
   stream.read(arr);
   T val = std::bit_cast<T>(arr);
@@ -120,64 +118,15 @@ message::arg_obj read_arg_obj(bytestream &stream) {
   message::arg_obj res;
   uint8_t count;
   stream >> count;
-  log << init << "Parser: current object has " << (int)count << " keys." << endl;
   for(uint8_t i = 0; i < count; i++) {
     std::string key = read_string(stream);
     uint8_t type_i;
     stream >> type_i;
     auto type = static_cast<message::arg_type>(type_i);
-    log << init << "  Parser: value " << (int)i << "; key = " << key
-        << "; type = " << type_to_str(type) << "." << endl;
     auto value = read_value(type, stream);
     res.set({ key, value });
   }
   return res;
-}
-
-void dump_args(const message::arg_obj &obj, int indent);
-void dump_list(const message::arg_list &list, int indent);
-
-void dump_val(const message::arg &a, int indent) {
-  auto simple_dumper = [](const auto &val) {
-    log << val << endl;
-  };
-
-  log << "[" << type_to_str(a.type()) << "]: ";
-#define SUBSET X(INT8) X(INT16) X(INT32) X(UINT8) X(UINT16) X(UINT32) X(CHAR) X(STRING)
-  switch(a.type()) {
-#define X(v) case message::arg_type::v: simple_dumper(a.get<message::arg_type::v>()); break;
-    SUBSET
-
-    case message::arg_type::SUB_OBJECT:
-      dump_args(static_cast<message::arg_obj>(a), indent + 2);
-      break;
-    case message::arg_type::LIST:
-      dump_list(static_cast<message::arg_list>(a), indent);
-      break;
-    default:
-      log << "???" << endl;
-      break;
-  }
-#undef X
-}
-
-void dump_list(const message::arg_list &list, int indent) {
-  log << endl;
-  for(size_t i = 0; i < list.size(); i++) {
-    log << init << " ";
-    for(int j = 0; j < indent; j++) log << " ";
-    dump_val(list[i], indent + 1);
-    log << endl;
-  }
-}
-
-void dump_args(const message::arg_obj &obj, int indent = 2) {
-  for(const auto &key: obj) {
-    log << init;
-    for(int i = 0; i < indent; i++) log << " ";
-    log << key << ": ";
-    dump_val(obj[key], indent);
-  }
 }
 
 message::message(bytestream &stream) {
@@ -188,24 +137,14 @@ message::message(bytestream &stream) {
   if(!magic_number_match(b1, b2))
     throw message_error("Can't parse message (missing magic number)");
 
-  log << init << "Parser: magic number matches." << endl;
-
   stream >> protocol_major >> protocol_minor;
   if(protocol_major > preferred_major_version())
     throw message_error("Can't parse message (incompatible major version)");
   if(protocol_major == preferred_major_version() && protocol_minor > preferred_minor_version())
     throw message_error("Can't parse message (incompatible minor version)");
 
-  log << init << "Parser: protocol version " << protocol_major << "."
-      << protocol_minor << "." << endl;
-
   cmd = read_string(stream);
-  log << init << "Parser: command is " << cmd << "." << endl;
-
   args = read_arg_obj(stream);
-  log << init << "Parser: finished. Dumping arguments..." << endl;
-
-  dump_args(args);
 }
 
 
@@ -234,9 +173,14 @@ void send_val(std::string_view v, bytestream &strm) {
   for(const char &c: v) strm << c;
 }
 
-void send_arg(const message::arg &a, bytestream &strm) {
-  strm << (int8_t)a.type();
-#define X(v) case message::arg_type::v: send_val(a.get<message::arg_type::v>(), strm); break;
+#define SUBSET X(INT8) X(INT16) X(INT32) X(UINT8) X(UINT16) X(UINT32) X(CHAR) X(STRING)
+
+void send_arg(const message::arg &a, bytestream &strm, bool send_type = true) {
+  if(send_type) strm << (int8_t)a.type();
+#define X(v) case message::arg_type::v: \
+  send_val(a.get<message::arg_type::v>(), strm); \
+  break;
+
   switch(a.type()) {
     SUBSET
 
@@ -265,16 +209,11 @@ void send_list(const message::arg_list &l, bytestream &strm) {
   strm << (int8_t)l.type();
   send_val((uint32_t)l.size(), strm);
   for(const auto v: l) {
-    send_arg(v, strm);
+    send_arg(v, strm, false);
   }
 }
 
 void message::send_to(tls::bytestream &strm) const {
-  log << init << "Sending message..." << endl;
-  log << init << "  -> command: " << cmd << endl;
-  log << init << "  -> arguments: " << endl;
-  dump_args(args, 4);
-
   strm << (byte)0x2E << (byte)0x43
        << preferred_major_version() << preferred_minor_version();
 

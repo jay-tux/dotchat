@@ -12,7 +12,7 @@
 using namespace dotchat::proto::_intl_;
 
 arg::arg(const arg_list &val)  : _type{matching_enum<arg_list>::val}, _content{val} {}
-arg::arg(const arg_obj &val)  : _type{matching_enum<arg_list>::val}, _content{val} {}
+arg::arg(const arg_obj &val)  : _type{matching_enum<arg_obj>::val}, _content{val} {}
 
 arg &arg::operator=(const arg_list &l) {
   _type = matching_enum<arg_list>::val;
@@ -67,6 +67,8 @@ const arg_obj &arg_list::get_obj(size_t n) const {
 }
 
 void arg_list::push_back(const arg_list &val) {
+  if(_content.empty())
+    _contained = matching_enum<arg_list>::val;
   if(_contained == matching_enum<arg_list>::val)
     _content.emplace_back(val);
   else
@@ -74,6 +76,8 @@ void arg_list::push_back(const arg_list &val) {
 }
 
 void arg_list::push_back(const arg_obj &val) {
+  if(_content.empty())
+    _contained = matching_enum<arg_obj>::val;
   if(_contained == matching_enum<arg_obj>::val)
     _content.emplace_back(val);
   else

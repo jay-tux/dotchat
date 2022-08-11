@@ -173,6 +173,8 @@ public:
 
   template <is_trivially_repr T>
   inline void push_back(const T &val) {
+    if(_content.empty())
+      _contained = matching_enum<T>::val;
     if(_contained == matching_enum<T>::val)
       _content.emplace_back(val);
     else
@@ -182,6 +184,7 @@ public:
   void push_back(const arg_obj &val);
 
   inline void push_back(const arg &arg) {
+    if(_content.empty()) _contained = arg.type();
     if(arg.type() != _contained) throw std::bad_any_cast();
     _content.push_back(arg);
   }
@@ -334,6 +337,13 @@ public:
   template <_intl_::is_repr ... Ts>
   explicit message(command cmd, std::pair<key, Ts>... values): cmd{std::move(cmd)} {
     (args.set(values), ...);
+  }
+
+  template <_intl_::is_repr T1, _intl_::is_repr ... Ts>
+  message(const message &other, std::pair<key, T1> mod1, std::pair<key, Ts>... mods) {
+    *this = other;
+    args.set(mod1);
+    (args.set(mods),...);
   }
 
   inline arg_obj &map() { return args; }

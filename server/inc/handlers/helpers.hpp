@@ -17,19 +17,9 @@
 #include "handlers/handlers.hpp"
 #include "db/types.hpp"
 #include "db/database.hpp"
+#include "protocol/helpers.hpp"
 
 namespace dotchat::server {
-template <typename T>
-static T require_arg(const std::string &key, const proto::message::arg_obj &source) {
-  if (!source.contains(key)) {
-    throw proto_error("Key `" + key + "` not present.");
-  }
-  if (source.type(key) != proto::_intl_::matching_enum<T>::val) {
-    throw proto_error("Key `" + key + "` doesn't have the correct type.");
-  }
-  return source[key].get<proto::_intl_::matching_enum<T>::val>();
-}
-
 inline static proto::message exc_to_message(const std::exception &e) {
   return proto::message("err", std::pair<std::string, std::string>{ "reason", std::string(e.what()) });
 }

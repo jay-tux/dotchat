@@ -20,6 +20,7 @@ add_executable(${PROJECT_NAME} main.cpp
         ../shared/src/logger.cpp ../shared/src/tls/tls_context.cpp
         ../shared/src/tls/tls_connection.cpp
         ../shared/src/protocol/message.cpp ../shared/src/protocol/message_intl.cpp
+        ../shared/src/protocol/requests.cpp ../shared/src/protocol/responses.cpp
         main.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE inc/)
 target_include_directories(${PROJECT_NAME} PRIVATE ../shared/inc/)

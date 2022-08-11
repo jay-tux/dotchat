@@ -67,21 +67,17 @@ tls_connection::tls_connection(const tls_context &ctxt, int conn_handle) : ssl{S
 
 void tls_connection::operator<<(const end_of_msg) {
   log << init << "Sending message of " << buffer.size() << " bytes." << endl;
-  hexgrid(std::span(buffer.buffer(), buffer.size()));
   if(SSL_write(ssl, buffer.buffer(), static_cast<int>(buffer.size())) < 0)
     throw tls_error("Can't send message");
   buffer.cleanse();
-  log << init << "After sending: SSL state is " << SSL_state_string(ssl) << endl;
 }
 
 bytestream tls_connection::read() {
-  log << init << "Attempting to read from TLS socket..." << endl;
   std::vector<byte> buf;
   buf.reserve(1024);
   bytestream res;
   if(auto got = SSL_read(ssl, buf.data(), 1023); got <= 0) {
     connected = false;
-    log << init << "Got " << got << " from SSL_read." << endl;
     dump_err(ssl, got);
     throw tls_error("Can't read from SSL/TLS.");
   }
@@ -89,23 +85,19 @@ bytestream tls_connection::read() {
     std::span subset(buf.begin(), got);
     auto grid = hexgrid{subset};
     grid.config().nonprint_chars = '?';
-    log << init << "Read " << got << " bytes." << endl;
+    log << grid;
     res.overwrite(subset);
-    log << init << "Stream size: " << res.size() << endl;
-    log << init << "Bytes: " << endl << grid;
   }
   return res;
 }
 
 void tls_connection::send(bytestream &strm) {
-  log << init << "Sending " << strm.size() << " bytes to TLS..." << endl;
   buffer = std::move(strm);
   (*this) << end_of_msg{};
 }
 
 void tls_connection::close() {
   if(ssl != nullptr) {
-    log << init << "Destroying (close) SSL at " << ssl << endl;
     SSL_shutdown(ssl);
     SSL_free(ssl);
     ::close(conn_handle);
@@ -115,7 +107,6 @@ void tls_connection::close() {
 
 tls_connection::~tls_connection() {
   if(ssl != nullptr) {
-    log << init << "Destroying (dtor) SSL at " << ssl << endl;
     SSL_shutdown(ssl);
     SSL_free(ssl);
     ::close(conn_handle);

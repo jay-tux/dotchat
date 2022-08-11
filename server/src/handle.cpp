@@ -36,7 +36,7 @@ message dotchat::server::handle(bytestream &in) {
 
   if(handlers::switcher.contains(got.get_command())) {
     try {
-      return handlers::switcher.at(got.get_command())(got.map());
+      return handlers::switcher.at(got.get_command())(got);
     }
     catch(const proto_error &e) {
       return exc_to_message(e);
