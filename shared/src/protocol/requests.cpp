@@ -67,3 +67,35 @@ channel_list_request channel_list_request::from(const dotchat::proto::message &m
 message channel_list_request::to() const {
   return token_request::to_intl(request_commands::channel_list);
 }
+
+// CHANNEL MESSAGE REQUEST
+channel_msg_request channel_msg_request::from(const message &m) {
+  return {
+    token_request::from(m),
+    require_arg<decltype(chan_id)>("chan_id", m.map()) // channel id
+  };
+}
+
+message channel_msg_request::to() const {
+  return {
+      token_request::to_intl(request_commands::channel_msg),
+      paired("chan_id", chan_id)
+  };
+}
+
+// MESSAGE SEND REQUEST
+message_send_request message_send_request::from(const message &m) {
+  return {
+    token_request::from(m),
+    require_arg<decltype(chan_id)>("chan_id", m.map()),
+    require_arg<decltype(msg_cnt)>("msg_cnt", m.map())
+  };
+}
+
+message message_send_request::to() const {
+  return {
+      token_request::to_intl(request_commands::send_msg),
+      paired("chan_id", chan_id),
+      paired("msg_cnt", msg_cnt)
+  };
+}

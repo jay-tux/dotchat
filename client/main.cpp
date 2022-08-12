@@ -1,4 +1,5 @@
 #include <string>
+#include <algorithm>
 #include "logger.hpp"
 #include "protocol/message.hpp"
 #include "protocol/requests.hpp"
@@ -30,6 +31,45 @@ void run_logout(tls_connection &conn, int32_t token) {
   log << init << "Logged out." << endl;
 }
 
+void run_get_channels(tls_connection &conn, int32_t token);
+
+void run_get_messages(tls_connection &conn, int32_t token, int32_t channel) {
+  while(true) {
+    log << init << "Attempting to retrieve messages in channel #" << channel << endl;
+    bytestream strm;
+    strm << channel_msg_request{{.token = token}, channel}.to();
+    conn.send(strm);
+
+    strm = conn.read();
+    from_message_convertible auto res = dispatch<channel_msg_response>(message(strm));
+    log << init << bold << underline << "Messages in this channel:" << reset << endl;
+    for (const auto &msg: res.msgs) {
+      log << init << "<@" << msg.sender << " at " << msg.when << ">: " << msg.cnt << endl;
+    }
+
+    std::string reply;
+    std::cout << "Send a reply (.q to exit, .c to choose a channel)? ";
+    std::getline(std::cin, reply);
+
+    if (reply == ".q") break;
+    else if (reply == ".c") {
+      run_get_channels(conn, token);
+      break;
+    } else {
+      bytestream msg_strm;
+      msg_strm << message_send_request{
+          {.token = token}, channel, reply
+      }.to();
+      conn.send(msg_strm);
+
+      msg_strm = conn.read();
+      if (message(msg_strm).get_command() != response_commands::okay) {
+        log << error << "Failed to send message!" << endl;
+      }
+    }
+  }
+}
+
 void run_get_channels(tls_connection &conn, int32_t token) {
   log << init << "Attempting to retrieve channel list..." << endl;
   bytestream strm;
@@ -38,9 +78,25 @@ void run_get_channels(tls_connection &conn, int32_t token) {
 
   strm = conn.read();
   from_message_convertible auto res = dispatch<channel_list_response>(message(strm));
+  std::vector<int32_t> channels;
+  log << init << bold << underline << "Channel list:" << reset << endl;
   for(const auto &chan: res.data) {
     log << init << "  -> Channel #" << chan.id << ": " << chan.name << endl;
+    channels.push_back(chan.id);
   }
+
+  int32_t channel = -1;
+  do {
+    std::cout << "Choose channel ID: ";
+    std::cin >> channel;
+    if(std::find(channels.begin(), channels.end(), channel) == channels.end()) {
+      log << init << "Invalid channel ID." << endl;
+      channel = -1;
+    }
+  } while(channel == -1);
+  run_get_messages(conn, token, channel);
+
+  log << endl;
 }
 
 void run_login(tls_connection &conn) {

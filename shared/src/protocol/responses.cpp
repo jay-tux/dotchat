@@ -98,3 +98,41 @@ message channel_list_response::to() const {
       paired("data", lst)
   };
 }
+
+// CHANNEL MESSAGE RESPONSE
+channel_msg_response channel_msg_response::from(const proto::message &m) {
+  auto msgs = require_arg<proto::message::arg_list>("msgs", m.map());
+  std::vector<message> res;
+
+  for(const auto &val: msgs) {
+    if (val.type() != _intl_::matching_enum<proto::message::arg_obj>::val)
+      throw proto_error("Invalid contained type in channel_msg_response.msgs");
+
+    auto obj = static_cast<proto::message::arg_obj>(val);
+    message msg {
+      .sender = require_arg<decltype(message::sender)>("sender", obj),
+      .when = require_arg<decltype(message::when)>("when", obj),
+      .cnt = require_arg<decltype(message::cnt)>("cnt", obj)
+    };
+
+    res.push_back(msg);
+  }
+
+  return { {}, res };
+}
+
+message channel_msg_response::to() const {
+  proto::message::arg_list lst;
+  for(const auto &msg: msgs) {
+    proto::message::arg_obj obj;
+    obj.set(paired("sender", msg.sender));
+    obj.set(paired("when", msg.when));
+    obj.set(paired("cnt", msg.cnt));
+    lst.push_back(obj);
+  }
+
+  return {
+      (*this).okay_response::to(),
+      paired("msgs", lst)
+  };
+}

@@ -16,13 +16,38 @@
 #include <optional>
 
 namespace dotchat::server::db {
+using clock_t = std::chrono::system_clock;
+using uncut_clock_t = std::chrono::steady_clock;
+
 inline auto now() {
-  return std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  return static_cast<uint32_t>(
+    std::chrono::time_point_cast<std::chrono::milliseconds>(clock_t::now())
+        .time_since_epoch()
+        .count()
+  );
+}
+
+inline auto now_uncut() {
+  return uncut_clock_t::now()
+          .time_since_epoch()
+          .count();
 }
 
 template <typename R, typename P>
 inline auto now_plus(std::chrono::duration<R, P> dur) {
-  return (std::chrono::high_resolution_clock::now().time_since_epoch() + dur).count();
+  return static_cast<uint32_t>(
+      (
+          std::chrono::time_point_cast<std::chrono::milliseconds>(clock_t::now())
+              .time_since_epoch() + dur
+      ).count()
+  );
+}
+
+template <typename R, typename P>
+inline auto now_plus_uncut(std::chrono::duration<R, P> dur) {
+  return (
+      uncut_clock_t::now().time_since_epoch() + dur
+  ).count();
 }
 
 struct user {
@@ -34,7 +59,7 @@ struct user {
 struct session_key {
   int key;
   int user;
-  decltype(now()) valid_until;
+  decltype(now_uncut()) valid_until;
 };
 
 struct channel {
@@ -54,7 +79,7 @@ struct message {
   int sender;
   int channel;
   std::string content;
-  int when;
+  decltype(now()) when;
   std::optional<int> replies_to;
 };
 }

@@ -13,6 +13,7 @@
 
 #include <concepts>
 #include <string>
+#include <chrono>
 #include "message.hpp"
 #include "either.hpp"
 
@@ -36,6 +37,8 @@ struct request_commands {
   const inline static std::string login = "login";
   const inline static std::string logout = "logout";
   const inline static std::string channel_list = "channel_lst";
+  const inline static std::string channel_msg = "channel_msg";
+  const inline static std::string send_msg = "msg_send";
 };
 
 struct token_request {
@@ -63,6 +66,21 @@ struct channel_list_request : public token_request {
   static channel_list_request from(const message &m);
   [[nodiscard]] message to() const;
 };
+
+struct channel_msg_request : public token_request {
+  int32_t chan_id;
+
+  static channel_msg_request from(const message &m);
+  [[nodiscard]] message to() const;
+};
+
+struct message_send_request : public token_request {
+  int32_t chan_id;
+  std::string msg_cnt;
+
+  static message_send_request from(const message &m);
+  [[nodiscard]] message to() const;
+};
 }
 
 namespace responses {
@@ -86,7 +104,7 @@ struct error_response {
 struct token_response : public okay_response {
   int32_t token;
   static token_response from(const message &m);
-  message to() const;
+  [[nodiscard]] message to() const;
 };
 
 using login_response = token_response;
@@ -100,8 +118,23 @@ struct channel_list_response : public okay_response {
   std::vector<channel_short> data;
 
   static channel_list_response from(const message &m);
-  message to() const;
+  [[nodiscard]] message to() const;
 };
+
+struct channel_msg_response : public okay_response {
+  struct message {
+    int32_t sender;
+    uint32_t when;
+    std::string cnt;
+  };
+
+  std::vector<message> msgs;
+
+  static channel_msg_response from(const proto::message &m);
+  [[nodiscard]] proto::message to() const;
+};
+
+using message_send_response = okay_response;
 }
 }
 

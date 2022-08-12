@@ -13,14 +13,17 @@
 #include "handlers/handlers.hpp"
 #include "db/database.hpp"
 #include "handlers/helpers.hpp"
-#include "protocol/helpers.hpp"
+#include "logger.hpp"
 
 using namespace sqlite_orm;
+using namespace dotchat;
 using namespace dotchat::tls;
 using namespace dotchat::proto;
 using namespace dotchat::proto::requests;
 using namespace dotchat::proto::responses;
 using namespace dotchat::server;
+
+using namespace dotchat::values;
 
 int gen_key() {
   std::array<bytestream::byte, sizeof(int)> data = {};
@@ -54,7 +57,20 @@ handlers::callback_t handlers::login = [](const message &m) -> message {
 
         int uid = res[0].id;
         int32_t key = gen_key();
-        db::database().replace(db::session_key{ key, uid, db::now_plus(1h) });
+        bool okay = false;
+
+        while(!okay) {
+          try {
+            check_session_key(key);
+            gen_key(); // aka this key already exists
+          }
+          catch(const proto_error &) {
+            okay = true; // aka this key is unique and isn't yet in the DB
+          }
+        }
+
+        db::database().replace(db::session_key{ key, uid, db::now_plus_uncut(24h) });
+        dump_keys();
         return login_response{ {}, key /* token */ };
       }
   );

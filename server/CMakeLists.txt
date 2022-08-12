@@ -23,7 +23,7 @@ add_executable(${PROJECT_NAME}
         ../shared/src/protocol/message.cpp src/handle.cpp src/thread_connection.cpp
         ../shared/src/protocol/message_intl.cpp
         src/handlers/login.cpp src/handlers/logout.cpp src/handlers/channels.cpp
-        ../shared/src/protocol/requests.cpp ../shared/src/protocol/responses.cpp)
+        ../shared/src/protocol/requests.cpp ../shared/src/protocol/responses.cpp src/handlers/channel_messages.cpp src/handlers/send_message.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE inc/)
 target_include_directories(${PROJECT_NAME} PRIVATE ../shared/inc/)
