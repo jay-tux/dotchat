@@ -1,5 +1,7 @@
 # Protocol description
 
+# OUTDATED - DON'T USE ANYMORE - GOTTA UPDATE
+
 ## Message structure
 ### Client messages
 Every message should have the following structure:
