@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 // Name:        tls_bytestream.hpp
-// Purpose:     
+// Purpose:     Bytestream for the TLS connection
 // Author:      jay-tux
 // Created:     July 12, 2022 6:01 PM
 // Copyright:   (c) 2022 jay-tux
@@ -18,6 +18,7 @@
 #include <bit>
 #include <span>
 #include <cstring>
+#include <stdexcept>
 
 namespace dotchat::tls {
 namespace _intl_ {
@@ -63,9 +64,9 @@ struct bytestream {
   }
 
   inline void sanitize() {
-    std::vector<byte> holder;
-    holder.reserve(data.size() - offset);
-    std::memcpy(holder.data(), data.data() + offset, data.size() * sizeof(byte));
+    auto end_it = data.begin() + offset;
+    data.erase(data.begin(), end_it);
+    offset = 0;
   }
 
   inline size_t read(const std::span<byte> &span) {

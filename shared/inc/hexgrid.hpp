@@ -60,7 +60,8 @@ struct hexgrid {
     char nonprint_chars = '.';
   };
 
-  explicit hexgrid(const std::span<T> &data) : data{data} {}
+  explicit hexgrid(const std::span<T> &data) : data{data}, conf{config_data()} {}
+  hexgrid(const std::span<T> &data, const config_data &conf) : data{data}, conf{conf} {}
 
   config_data &config() { return conf; }
   const config_data &config() const { return conf; }
