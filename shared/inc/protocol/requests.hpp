@@ -14,6 +14,7 @@
 #include <concepts>
 #include <string>
 #include <chrono>
+#include <optional>
 #include "message.hpp"
 #include "either.hpp"
 
@@ -39,6 +40,12 @@ struct request_commands {
   const inline static std::string channel_list = "channel_lst";
   const inline static std::string channel_msg = "channel_msg";
   const inline static std::string send_msg = "msg_send";
+  const inline static std::string channel_details = "chan_detail";
+  const inline static std::string new_channel = "new_chan";
+  const inline static std::string new_user = "new_usr";
+  const inline static std::string change_pass = "ch_pass";
+  const inline static std::string user_details = "usr_detail";
+  const inline static std::string invite_user = "invite";
 };
 
 struct token_request {
@@ -81,6 +88,51 @@ struct message_send_request : public token_request {
   static message_send_request from(const message &m);
   [[nodiscard]] message to() const;
 };
+
+struct channel_details_request : public token_request {
+  int32_t chan_id;
+
+  static channel_details_request from(const message &m);
+  [[nodiscard]] message to() const;
+};
+
+struct new_channel_request : public token_request {
+  std::string name;
+  std::optional<std::string> desc;
+
+  static new_channel_request from(const message &m);
+  [[nodiscard]] message to() const;
+};
+
+struct new_user_request {
+  std::string name;
+  std::string pass;
+
+  static new_user_request from(const message &m);
+  [[nodiscard]] message to() const;
+};
+
+struct change_pass_request : public token_request {
+  std::string new_pass;
+
+  static change_pass_request from(const message &m);
+  [[nodiscard]] message to() const;
+};
+
+struct user_details_request : public token_request {
+  int32_t uid;
+
+  static user_details_request from(const message &m);
+  [[nodiscard]] message to() const;
+};
+
+struct invite_user_request : public token_request {
+  int32_t uid;
+  int32_t chan_id;
+
+  static invite_user_request from(const message &m);
+  [[nodiscard]] message to() const;
+};
 }
 
 namespace responses {
@@ -104,6 +156,12 @@ struct error_response {
 struct token_response : public okay_response {
   int32_t token;
   static token_response from(const message &m);
+  [[nodiscard]] message to() const;
+};
+
+struct id_response : public okay_response {
+  int32_t id;
+  static id_response from(const message &m);
   [[nodiscard]] message to() const;
 };
 
@@ -135,6 +193,32 @@ struct channel_msg_response : public okay_response {
 };
 
 using message_send_response = okay_response;
+
+struct channel_details_response : public okay_response {
+  int32_t id;
+  std::string name;
+  int32_t owner_id;
+  std::optional<std::string> desc;
+  std::vector<int32_t> members;
+
+  static channel_details_response from(const message &m);
+  [[nodiscard]] message to() const;
+};
+
+using new_channel_response = id_response;
+using new_user_response = okay_response;
+using change_pass_response = okay_response;
+
+struct user_details_response : okay_response {
+  int32_t id;
+  std::string name;
+  std::vector<int32_t> mutual_channels;
+
+  static user_details_response from(const message &m);
+  [[nodiscard]] message to() const;
+};
+
+using invite_user_response = okay_response;
 }
 }
 

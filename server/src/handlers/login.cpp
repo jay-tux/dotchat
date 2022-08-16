@@ -31,21 +31,6 @@ int gen_key() {
   return std::bit_cast<int>(data);
 }
 
-/*
- *  --- LOGIN MESSAGE ---
- *  Command: login
- *  Arguments:
- *   - name: string ~ username
- *   - pass: string ~ password
- */
-
-/*
- *  --- LOGIN SUCCESS RESPONSE ---
- *  Command: ok
- *  Arguments:
- *   - token: int32_t ~ session key
- */
-
 handlers::callback_t handlers::login = [](const message &m) -> message {
   using namespace std::chrono_literals;
 

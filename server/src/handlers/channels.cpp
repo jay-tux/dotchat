@@ -10,31 +10,13 @@
 #include "handlers/handlers.hpp"
 #include "handlers/helpers.hpp"
 
-#include "logger.hpp"
-
-using namespace dotchat;
-using namespace dotchat::values;
 using namespace sqlite_orm;
 using namespace dotchat::server;
 using namespace dotchat::proto;
 using namespace dotchat::proto::requests;
 using namespace dotchat::proto::responses;
 
-/*
- *  --- CHANNEL LISTING MESSAGE ---
- *  Command: channel_lst
- *  Arguments:
- *   - token: int32 ~ token
- */
-
-/*
- * --- CHANNEL LISTING SUCCESS RESPONSE ---
- * Command: ok
- * Arguments:
- *  - data: [(id: int32_t, name: string)] ~ result data
- */
-
-handlers::callback_t handlers::channels = [](const message &m) -> message {
+handlers::callback_t handlers::channel_list = [](const message &m) -> message {
   return reply_to<channel_list_request, channel_list_response>(m,
       [](const channel_list_request &req) -> channel_list_response {
         auto user = check_session_key(req.token);

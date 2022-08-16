@@ -18,23 +18,28 @@ namespace dotchat::server {
 using dotchat::proto::proto_error;
 
 struct handlers {
-  using arg_obj_t = proto::message::arg_obj;
   using callback_t = proto::message (*) (const proto::message &);
   using pair_t = std::pair<std::string, callback_t>;
   using cmd_coll = proto::requests::request_commands;
 
   static callback_t login;
   static callback_t logout;
-  static callback_t channels;
+  static callback_t channel_list;
   static callback_t channel_msg;
   static callback_t send_msg;
+  static callback_t channel_details;
+  static callback_t new_channel;
+  static callback_t new_user;
+  static callback_t change_pass;
+  static callback_t user_details;
+  static callback_t invite_user;
 
   const static inline std::map<std::string, callback_t, std::less<>> switcher {
-      pair_t{ cmd_coll::login, login },
-      pair_t{ cmd_coll::logout, logout },
-      pair_t{ cmd_coll::channel_list, channels },
-      pair_t{ cmd_coll::channel_msg, channel_msg },
-      pair_t{ cmd_coll::send_msg, send_msg }
+#define ADD(command) pair_t{ cmd_coll::command, command }
+      ADD(login), ADD(logout), ADD(channel_list), ADD(channel_msg),
+      ADD(send_msg), ADD(channel_details), ADD(new_channel),
+      ADD(new_user), ADD(change_pass), ADD(user_details), ADD(invite_user)
+#undef ADD
   };
 };
 }

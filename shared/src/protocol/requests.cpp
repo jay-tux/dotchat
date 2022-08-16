@@ -99,3 +99,101 @@ message message_send_request::to() const {
       paired("msg_cnt", msg_cnt)
   };
 }
+
+// CHANNEL DETAILS REQUEST
+channel_details_request channel_details_request::from(const message &m) {
+  return {
+    token_request::from(m),
+    require_arg<decltype(chan_id)>("chan_id", m.map())
+  };
+}
+
+message channel_details_request::to() const {
+  return {
+    token_request::to_intl(request_commands::channel_details),
+    paired("chan_id", chan_id)
+  };
+}
+
+// NEW CHANNEL REQUEST
+new_channel_request new_channel_request::from(const message &m) {
+  auto base = token_request::from(m);
+  auto desc = require_arg<std::string>("desc", m.map());
+
+  return {
+    base,
+    require_arg<decltype(name)>("name", m.map()),
+    desc.empty() ? std::nullopt : decltype(new_channel_request::desc){desc}
+  };
+}
+
+message new_channel_request::to() const {
+  return {
+    token_request::to_intl(request_commands::new_channel),
+    paired("name", name),
+    paired("desc", desc.has_value() ? desc.value() : "")
+  };
+}
+
+// NEW USER REQUEST
+new_user_request new_user_request::from(const message &m) {
+  return {
+    .name = require_arg<decltype(name)>("name", m.map()),
+    .pass = require_arg<decltype(pass)>("pass", m.map())
+  };
+}
+
+message new_user_request::to() const {
+  return message{
+    request_commands::new_user,
+    paired("name", name),
+    paired("pass", pass)
+  };
+}
+
+// CHANGE PASS REQUEST
+change_pass_request change_pass_request::from(const message &m) {
+  return {
+    token_request::from(m),
+    require_arg<decltype(new_pass)>("new_pass", m.map())
+  };
+}
+
+message change_pass_request::to() const {
+  return {
+    token_request::to_intl(request_commands::change_pass),
+    paired("new_pass", new_pass)
+  };
+}
+
+// USER DETAILS REQUEST
+user_details_request user_details_request::from(const message &m) {
+  return {
+    token_request::from(m),
+    require_arg<decltype(uid)>("uid", m.map())
+  };
+}
+
+message user_details_request::to() const {
+  return {
+    token_request::to_intl(request_commands::user_details),
+    paired("uid", uid)
+  };
+}
+
+// INVITE USER REQUEST
+invite_user_request invite_user_request::from(const message &m) {
+  return {
+    token_request::from(m),
+    require_arg<decltype(uid)>("uid", m.map()),
+    require_arg<decltype(chan_id)>("chan_id", m.map())
+  };
+}
+
+message invite_user_request::to() const {
+  return {
+    token_request::to_intl(request_commands::invite_user),
+    paired("uid", uid),
+    paired("chan_id", chan_id)
+  };
+}

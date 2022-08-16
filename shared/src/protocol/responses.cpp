@@ -64,6 +64,21 @@ message token_response::to() const {
   };
 }
 
+// ID RESPONSE
+id_response id_response::from(const dotchat::proto::message &m) {
+  return {
+    okay_response::from(m),
+    require_arg<decltype(id)>("id", m.map())
+  };
+}
+
+message id_response::to() const {
+  return {
+      (*this).okay_response::to(),
+      paired("id", id)
+  };
+}
+
 // CHANNEL LIST RESPONSE
 channel_list_response channel_list_response::from(const dotchat::proto::message &m) {
   auto data = require_arg<message::arg_list>("data", m.map());
@@ -134,5 +149,73 @@ message channel_msg_response::to() const {
   return {
       (*this).okay_response::to(),
       paired("msgs", lst)
+  };
+}
+
+// CHANNEL DETAILS RESPONSE
+channel_details_response channel_details_response::from(const dotchat::proto::message &m) {
+  auto cid = require_arg<decltype(id)>("id", m.map());
+  auto cname = require_arg<decltype(name)>("name", m.map());
+  auto cowner = require_arg<decltype(owner_id)>("owner_id", m.map());
+  auto cdesc = require_arg<std::string>("desc", m.map());
+
+  auto lst = require_arg<message::arg_list>("members", m.map());
+  decltype(members) res;
+  for(const auto &val: lst) {
+    if(val.type() != _intl_::matching_enum<decltype(res)::value_type>::val)
+      throw proto_error("Invalid contained type in channel_details_response.members");
+
+    res.push_back(static_cast<decltype(res)::value_type>(val));
+  }
+
+  return {
+      {},
+      cid, cname, cowner, cdesc.empty() ? std::nullopt : decltype(desc){cdesc}, res
+  };
+}
+
+message channel_details_response::to() const {
+  message::arg_list lst;
+  for(const auto &mem: members) lst.push_back(mem);
+
+  return {
+      (*this).okay_response::to(),
+      paired("id", id),
+      paired("name", name),
+      paired("owner_id", owner_id),
+      paired("desc", desc.has_value() ? desc.value() : ""),
+      paired("members", lst)
+  };
+}
+
+// USER DETAILS RESPONSE
+user_details_response user_details_response::from(const dotchat::proto::message &m) {
+  auto _id = require_arg<decltype(id)>("id", m.map());
+  auto _name = require_arg<decltype(name)>("name", m.map());
+
+  auto lst = require_arg<message::arg_list>("mutual_channels", m.map());
+  decltype(mutual_channels) _mutual;
+  for(const auto &val: lst) {
+    if(val.type() != _intl_::matching_enum<decltype(_mutual)::value_type>::val)
+      throw proto_error("Invalid contained type in user_details_response.mutual_channels");
+
+    _mutual.push_back(static_cast<decltype(_mutual)::value_type>(val));
+  }
+
+  return {
+      {},
+      _id, _name, _mutual
+  };
+}
+
+message user_details_response::to() const {
+  message::arg_list lst;
+  for(const auto &mut: mutual_channels) lst.push_back(mut);
+
+  return {
+      (*this).okay_response::to(),
+      paired("id", id),
+      paired("name", name),
+      paired("mutual_channels", lst)
   };
 }

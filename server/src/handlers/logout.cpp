@@ -16,18 +16,6 @@ using namespace dotchat::proto::requests;
 using namespace dotchat::proto::responses;
 using namespace sqlite_orm;
 
-/*
- *  --- LOGOUT MESSAGE ---
- *  Command: logout
- *  Arguments:
- *   - token: int32 ~ token
- */
-
-/*
- * --- LOGOUT SUCCESS RESPONSE ---
- * Command: ok
- */
-
 handlers::callback_t handlers::logout = [](const message &m) -> message {
   return reply_to<logout_request, logout_response>(m,
       [](const logout_request &req) -> logout_response {
