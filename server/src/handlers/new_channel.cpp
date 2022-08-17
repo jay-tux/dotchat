@@ -29,6 +29,7 @@ handlers::callback_t handlers::new_channel = [](const message &m) -> message {
       };
 
       auto id = db::database().insert(created);
+      db::database().replace(db::channel_member{ .user = user.id, .channel = id });
       return {
           {}, id
       };

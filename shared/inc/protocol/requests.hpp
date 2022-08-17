@@ -19,6 +19,27 @@
 #include "either.hpp"
 
 namespace dotchat::proto {
+using clock_t = std::chrono::system_clock;
+
+inline auto now() {
+  return static_cast<uint32_t>(
+    std::chrono::time_point_cast<std::chrono::milliseconds>(
+        clock_t::now()
+    ).time_since_epoch().count()
+  );
+}
+
+using now_t = decltype(now());
+
+inline auto from_now(now_t val) {
+  using namespace std::chrono_literals;
+  auto ms = std::chrono::milliseconds(val);
+  auto time = std::chrono::time_point<clock_t>(ms);
+  return time;
+}
+
+using from_now_t = decltype(from_now(0));
+
 template <typename T>
 concept from_message_convertible = requires(const message &m) {
   { T::from(m) } -> std::same_as<T>; // static from method

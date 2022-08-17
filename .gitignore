@@ -6,3 +6,7 @@ server/*.pem
 client/*.pem
 
 server/*.sql_db
+
+doc/*
+
+!.gitkeep

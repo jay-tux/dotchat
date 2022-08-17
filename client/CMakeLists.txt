@@ -21,7 +21,8 @@ add_executable(${PROJECT_NAME} main.cpp
         ../shared/src/tls/tls_connection.cpp
         ../shared/src/protocol/message.cpp ../shared/src/protocol/message_intl.cpp
         ../shared/src/protocol/requests.cpp ../shared/src/protocol/responses.cpp
-        main.cpp)
+        main.cpp
+        src/cli/wait_loop.cpp src/cli/login_related.cpp src/cli/channel_related.cpp src/cli/user_related.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE inc/)
 target_include_directories(${PROJECT_NAME} PRIVATE ../shared/inc/)
 conan_target_link_libraries(${PROJECT_NAME})
