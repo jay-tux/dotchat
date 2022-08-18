@@ -16,6 +16,11 @@ using namespace dotchat::proto;
 using namespace dotchat::proto::requests;
 using namespace dotchat::proto::responses;
 
+void check_command(const std::string &command, const message &m) {
+  if(m.get_command() != command)
+    throw proto_error("Expected command `" + command + "`, but got `" + m.get_command() + "`");
+}
+
 template <typename T>
 std::pair<std::string, T> paired(std::string key, T val) {
   return std::make_pair(key, val);
@@ -37,6 +42,7 @@ message token_request::to_intl(const message::command &command) const {
 
 // LOGIN REQUEST
 login_request login_request::from(const dotchat::proto::message &m) {
+  check_command(request_commands::login, m);
   return {
     .user = require_arg<decltype(user)>("user", m.map()),
     .pass = require_arg<decltype(pass)>("pass", m.map())
@@ -52,6 +58,7 @@ message login_request::to() const {
 
 // LOGOUT REQUEST
 logout_request logout_request::from(const dotchat::proto::message &m) {
+  check_command(request_commands::logout, m);
   return logout_request{ token_request::from(m) };
 }
 
@@ -61,6 +68,7 @@ message logout_request::to() const {
 
 // CHANNEL LIST REQUEST
 channel_list_request channel_list_request::from(const dotchat::proto::message &m) {
+  check_command(request_commands::channel_list, m);
   return channel_list_request{ token_request::from(m) };
 }
 
@@ -70,6 +78,7 @@ message channel_list_request::to() const {
 
 // CHANNEL MESSAGE REQUEST
 channel_msg_request channel_msg_request::from(const message &m) {
+  check_command(request_commands::channel_msg, m);
   return {
     token_request::from(m),
     require_arg<decltype(chan_id)>("chan_id", m.map()) // channel id
@@ -85,6 +94,7 @@ message channel_msg_request::to() const {
 
 // MESSAGE SEND REQUEST
 message_send_request message_send_request::from(const message &m) {
+  check_command(request_commands::send_msg, m);
   return {
     token_request::from(m),
     require_arg<decltype(chan_id)>("chan_id", m.map()),
@@ -102,6 +112,7 @@ message message_send_request::to() const {
 
 // CHANNEL DETAILS REQUEST
 channel_details_request channel_details_request::from(const message &m) {
+  check_command(request_commands::channel_details, m);
   return {
     token_request::from(m),
     require_arg<decltype(chan_id)>("chan_id", m.map())
@@ -117,6 +128,7 @@ message channel_details_request::to() const {
 
 // NEW CHANNEL REQUEST
 new_channel_request new_channel_request::from(const message &m) {
+  check_command(request_commands::new_channel, m);
   auto base = token_request::from(m);
   auto desc = require_arg<std::string>("desc", m.map());
 
@@ -137,6 +149,7 @@ message new_channel_request::to() const {
 
 // NEW USER REQUEST
 new_user_request new_user_request::from(const message &m) {
+  check_command(request_commands::new_user, m);
   return {
     .name = require_arg<decltype(name)>("name", m.map()),
     .pass = require_arg<decltype(pass)>("pass", m.map())
@@ -153,6 +166,7 @@ message new_user_request::to() const {
 
 // CHANGE PASS REQUEST
 change_pass_request change_pass_request::from(const message &m) {
+  check_command(request_commands::change_pass, m);
   return {
     token_request::from(m),
     require_arg<decltype(new_pass)>("new_pass", m.map())
@@ -168,6 +182,7 @@ message change_pass_request::to() const {
 
 // USER DETAILS REQUEST
 user_details_request user_details_request::from(const message &m) {
+  check_command(request_commands::user_details, m);
   return {
     token_request::from(m),
     require_arg<decltype(uid)>("uid", m.map())
@@ -183,6 +198,7 @@ message user_details_request::to() const {
 
 // INVITE USER REQUEST
 invite_user_request invite_user_request::from(const message &m) {
+  check_command(request_commands::invite_user, m);
   return {
     token_request::from(m),
     require_arg<decltype(uid)>("uid", m.map()),

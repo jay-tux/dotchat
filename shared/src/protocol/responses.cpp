@@ -22,7 +22,9 @@ std::pair<std::string, T> paired(std::string key, T val) {
 }
 
 // OKAY RESPONSE
-okay_response okay_response::from(const dotchat::proto::message &) {
+okay_response okay_response::from(const dotchat::proto::message &m) {
+  if(m.get_command() != response_commands::okay)
+    throw proto_error("Expected command `" + response_commands::okay + "`, but got `" + m.get_command() + "`");
   return {};
 }
 message okay_response::to() const {
