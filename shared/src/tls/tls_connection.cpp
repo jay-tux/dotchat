@@ -72,7 +72,7 @@ void tls_connection::operator<<(const end_of_msg) {
   buffer.cleanse();
 }
 
-bytestream tls_connection::read() {
+bytestream tls_connection::read() { // TODO: refactor to allow messages of > 1024 bytes
   std::vector<byte> buf;
   buf.reserve(1024);
   bytestream res;

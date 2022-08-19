@@ -885,6 +885,9 @@ public:
   /**
    * \short Writes this message to the given TLS byte stream.
    * \param strm The stream to write to.
+   * \throws `dotchat::proto::message_error` if the map of any of its sub-objects has more than 255 keys.
+   * \throws `dotchat::proto::message_error` if the command or any string value (including keys) is longer than 255
+   * characters.
    */
   void send_to(tls::bytestream &strm) const;
 

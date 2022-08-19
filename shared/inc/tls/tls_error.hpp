@@ -12,27 +12,41 @@
 #define DOTCHAT_SERVER_TLS_ERROR_HPP
 
 #include <string>
-#include <exception>
+#include <stdexcept>
 #include <utility>
 #include <array>
 #include "openssl/err.h"
 #include "logger.hpp"
 
+/**
+ * \short Namespace containing all code related to the dotchat OpenSSL TLS wrappers.
+ */
 namespace dotchat::tls {
-struct tls_error : public std::exception {
-  inline explicit tls_error(std::string msg) : std::exception(), msg{std::move(msg)} {
+/**
+ * \short Structure representing an error during TLS operations.
+ * \see `std::logic_error`
+ */
+struct tls_error : public std::logic_error {
+  /**
+   * \short Constructs a new TLS error; the message is appended by lines stating where things went wrong (using the
+   * OpenSSL error queue).
+   * \param msg The error message.
+   */
+  inline explicit tls_error(const std::string &msg) : std::logic_error(msg + openssl_caused_by()) {}
+
+  /**
+   * \short Gets a string containing the OpenSSL error queue.
+   * \return A string with the error queue, in human-readable format (starting with a newline, all indented by 1 tab).
+   */
+  inline static std::string openssl_caused_by() {
+    std::string res;
     std::array<char, 1024> buf = {};
     while(ERR_peek_error() != 0) {
       ERR_error_string_n(ERR_get_error(), buf.data(), 1024);
-      this->msg += std::string("\n\tCaused by ") + std::string(buf.data());
+      res += std::string("\n\tCaused by ") + std::string(buf.data());
     }
+    return res;
   }
-
-  [[nodiscard]] inline const char * what() const noexcept override {
-    return msg.c_str();
-  }
-
-  std::string msg;
 };
 }
 

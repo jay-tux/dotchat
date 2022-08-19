@@ -77,6 +77,7 @@ tls_context &tls_context::operator=(const tls_context &other) {
   operation = other.operation;
   key = other.key;
   cert = other.cert;
+  if(internal != nullptr) SSL_CTX_free(internal);
   internal = (operation == mode::SERVER) ? server_setup(other.key, other.cert) : client_setup(other.cert);
   return *this;
 }
