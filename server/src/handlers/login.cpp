@@ -13,7 +13,6 @@
 #include "handlers/handlers.hpp"
 #include "db/database.hpp"
 #include "handlers/helpers.hpp"
-#include "logger.hpp"
 
 using namespace sqlite_orm;
 using namespace dotchat;
@@ -22,8 +21,6 @@ using namespace dotchat::proto;
 using namespace dotchat::proto::requests;
 using namespace dotchat::proto::responses;
 using namespace dotchat::server;
-
-using namespace dotchat::values;
 
 int gen_key() {
   std::array<bytestream::byte, sizeof(int)> data = {};
@@ -55,7 +52,6 @@ handlers::callback_t handlers::login = [](const message &m) -> message {
         }
 
         db::database().replace(db::session_key{ key, uid, db::now_plus_uncut(24h) });
-        dump_keys();
         return login_response{ {}, key /* token */ };
       }
   );

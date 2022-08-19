@@ -16,7 +16,6 @@
 #include <utility>
 #include <array>
 #include "openssl/err.h"
-#include "logger.hpp"
 
 /**
  * \short Namespace containing all code related to the dotchat OpenSSL TLS wrappers.

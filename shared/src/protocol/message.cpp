@@ -11,7 +11,6 @@
 #include <array>
 #include <arpa/inet.h>
 
-#include "logger.hpp"
 #include "tls/tls_bytestream.hpp"
 #include "tls/tls_connection.hpp"
 #include "dynsize_array.hpp"
@@ -20,12 +19,9 @@
 using namespace dotchat;
 using namespace dotchat::tls;
 using namespace dotchat::proto;
-using namespace dotchat::values;
 
 #define TYPES X(INT8) X(INT16) X(INT32) X(UINT8) X(UINT16) X(UINT32)\
   X(CHAR) X(STRING) X(SUB_OBJECT) X(LIST)
-
-//const static logger::log_source init{"MESSAGE", blue};
 
 inline const char *type_to_str(message::arg_type a){
 #define X(v) case message::arg_type::v: return #v;

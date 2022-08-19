@@ -8,19 +8,15 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include "tls/tls_server_socket.hpp"
-#include "logger.hpp"
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include <poll.h>
 
 using namespace dotchat;
 using namespace dotchat::tls;
-using namespace dotchat::values;
-
-const logger::log_source init{"TLS_SOCK", magenta};
 
 tls_server_socket::tls_server_socket(uint16_t port, tls_context &ctxt) : port{port}, ctxt{ctxt} {
-  log << init << "Starting socket on port " << port << "..." << endl;
    sockaddr_in addr = {
        .sin_family = AF_INET,
        .sin_port = htons(port),
@@ -50,7 +46,6 @@ tls_connection tls_server_socket::accept() const {
   if(client < 0) {
     throw socket_error("Unable to accept connection.");
   }
-  log << init << "Connected to " << inet_ntoa(addr.sin_addr) << "." << endl;
   return { ctxt, client };
 }
 

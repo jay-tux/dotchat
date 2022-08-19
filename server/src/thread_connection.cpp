@@ -8,37 +8,27 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include <tls/tls_error.hpp>
-#include "logger.hpp"
+#include <iostream>
 #include "thread_connection.hpp"
 #include "handle.hpp"
 
 using namespace dotchat::server;
 using namespace dotchat;
-using namespace dotchat::values;
 using namespace dotchat::tls;
-
-const logger::log_source init{"THRD_CONN", green};
-const logger::log_source error { "ERROR", red };
 
 std::atomic<size_t> thread_conn::thread_id_next = 0;
 
 void thread_conn::callback() {
-  log << init << "Thread has been forked (ID: " << id << "). Starting conversation..." << endl;
   state = thread_state::RUNNING;
 
   try {
     while (conn && is_running()) {
-      log << init << " -> reading from stream..." << endl;
       auto stream = conn.read();
-      log << init << " -> stream size is " << stream.size() << endl;
       if (stream.size() == 0) {
-        log << init << " -> empty stream; closing connection..." << endl;
         conn.close();
         state = thread_state::FINISHED;
       } else {
-        log << init << " -> handling message..." << endl;
         auto res = handle(stream);
-        log << init << " -> sending response..." << endl;
         bytestream strm;
         strm << res;
         conn.send(strm);
@@ -51,17 +41,15 @@ void thread_conn::callback() {
     }
   }
   catch(const tls::tls_error &err) {
-    log << error << red << "An error occurred:" << endl;
-    log << error << red << "  " << err.what() << endl;
-    log << error << red << "OpenSSL error queue: ";
-    tls_context::dump_error_queue([](){ log << endl << error << red << "  "; }, log);
-    log << endl;
+    std::cerr << "An error occurred:" << std::endl;
+    std::cerr << "  " << err.what() << std::endl;
+    std::cerr << "OpenSSL error queue: ";
+    tls_context::dump_error_queue([](){ std::cerr << std::endl << "  "; }, std::cerr);
+    std::cerr << std::endl;
   }
   catch(const std::exception &exc) {
-    log << error << red << "An error occurred:" << endl;
-    log << error << red << "  " << exc.what() << endl;
+    std::cerr << "An error occurred:" << std::endl;
+    std::cerr << "  " << exc.what() << std::endl;
     conn.close();
   }
-
-  log << init << "Thread (ID: " << id << ") finished." << endl;
 }

@@ -9,9 +9,9 @@
 
 #include "tls/tls_connection.hpp"
 #include "tls/tls_error.hpp"
-#include "logger.hpp"
-#include "hexgrid.hpp"
 #include "openssl/ssl.h"
+#include <iostream>
+#include <unistd.h>
 
 #if __unix__
 #include <cerrno>
@@ -19,13 +19,10 @@
 
 using namespace dotchat;
 using namespace dotchat::tls;
-using namespace dotchat::values;
-
-const logger::log_source init{"TLS_CONN", blue};
 
 void dump_err(const SSL *ssl, int err) {
   auto code = SSL_get_error(ssl, err);
-#define X(x) case (x): log << init << "Error " << (x) << ": " << #x << endl; break;
+#define X(x) case (x): std::cerr << "Error " << (x) << ": " << #x << std::endl; break;
   switch(code) {
     X(SSL_ERROR_NONE)
     X(SSL_ERROR_ZERO_RETURN)
@@ -39,13 +36,13 @@ void dump_err(const SSL *ssl, int err) {
     X(SSL_ERROR_WANT_CLIENT_HELLO_CB)
     X(SSL_ERROR_SYSCALL)
     X(SSL_ERROR_SSL)
-    default: log << init << "Error " << code << ": unknown?" << endl; break;
+    default: std::cerr << "Error " << code << ": unknown?" << std::endl; break;
   }
 
 #if __unix__
   if(code == SSL_ERROR_SYSCALL) {
-    log << init << "  -> inspecting *nix errno..." << endl;
-    log << init << "  -> *nix errno information: " << errno << " ~> " << strerror(errno) << endl;
+    std::cerr << "  -> inspecting *nix errno..." << std::endl;
+    std::cerr << "  -> *nix errno information: " << errno << " ~> " << strerror(errno) << std::endl;
   }
 #endif
 }
@@ -66,7 +63,6 @@ tls_connection::tls_connection(const tls_context &ctxt, int conn_handle) : ssl{S
 }
 
 void tls_connection::operator<<(const end_of_msg) {
-  log << init << "Sending message of " << buffer.size() << " bytes." << endl;
   if(SSL_write(ssl, buffer.buffer(), static_cast<int>(buffer.size())) < 0)
     throw tls_error("Can't send message");
   buffer.cleanse();
@@ -83,9 +79,6 @@ bytestream tls_connection::read() { // TODO: refactor to allow messages of > 102
   }
   else {
     std::span subset(buf.begin(), got);
-    auto grid = hexgrid{subset};
-    grid.config().nonprint_chars = '?';
-    log << grid;
     res.overwrite(subset);
   }
   return res;

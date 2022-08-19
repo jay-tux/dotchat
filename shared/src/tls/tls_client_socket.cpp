@@ -8,18 +8,14 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include "tls/tls_client_socket.hpp"
-#include "logger.hpp"
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 using namespace dotchat;
 using namespace dotchat::tls;
-using namespace dotchat::values;
-
-const logger::log_source init{"TLS_SOCK", magenta};
 
 tls_client_socket::tls_client_socket(tls_context &ctxt) : ctxt{ctxt} {
-  log << init << "Creating client socket..." << endl;
   handle = socket(AF_INET, SOCK_STREAM, 0);
   if(handle < 0) {
     throw socket_error("Can't create socket.");
@@ -27,7 +23,6 @@ tls_client_socket::tls_client_socket(tls_context &ctxt) : ctxt{ctxt} {
 }
 
 tls_connection tls_client_socket::connect(const std::string &ip, uint16_t port) const {
-  log << init << "Attempting connection to " << ip << ":" << port << endl;
   sockaddr_in addr = {
       .sin_family = AF_INET,
       .sin_port = htons(port),

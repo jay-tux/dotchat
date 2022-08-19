@@ -8,24 +8,15 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include "handle.hpp"
-#include "logger.hpp"
-#include "either.hpp"
-#include "db/database.hpp"
-#include "db/types.hpp"
-#include "openssl/rand.h"
 #include "handlers/handlers.hpp"
 #include "handlers/helpers.hpp"
-#include <sstream>
 #include <string>
 
 using namespace dotchat;
-using namespace dotchat::values;
 using namespace dotchat::tls;
 using namespace dotchat::server;
 using namespace dotchat::proto;
 using namespace sqlite_orm;
-const logger::log_source init { "HANDLER", grey };
-const logger::log_source error { "ERROR", red };
 
 message invalid_command(const std::string &cmnd) {
   return exc_to_message(proto_error("Command `" + cmnd + "` is invalid."));
