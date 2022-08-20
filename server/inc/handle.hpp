@@ -14,7 +14,15 @@
 #include "tls/tls_bytestream.hpp"
 #include "protocol/message.hpp"
 
+/**
+ * \short Namespace for all code related to the server.
+ */
 namespace dotchat::server {
+/**
+ * \short Reads a message from the byte stream, then chooses the correct handler and returns a response.
+ * \param in The stream to read from.
+ * \returns The response message.
+ */
 proto::message handle(tls::bytestream &in);
 }
 
