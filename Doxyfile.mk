@@ -136,7 +136,6 @@ FILE_PATTERNS          = *.c \
                          *.inc \
                          *.m \
                          *.markdown \
-                         *.md \
                          *.mm \
                          *.dox \
                          *.py \
