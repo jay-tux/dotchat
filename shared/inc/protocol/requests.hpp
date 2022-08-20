@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Message to request/response converters.
+ */
 
 #ifndef DOTCHAT_RESPONSES_HPP
 #define DOTCHAT_RESPONSES_HPP

@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Wrapper around SSL_CTX.
+ */
 
 #ifndef DOTCHAT_SERVER_TLS_CONTEXT_HPP
 #define DOTCHAT_SERVER_TLS_CONTEXT_HPP

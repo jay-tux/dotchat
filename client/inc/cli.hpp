@@ -7,6 +7,11 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short CLI interface for the dotchat client.
+ */
+
 #ifndef DOTCHAT_CLIENT_CLI_HPP
 #define DOTCHAT_CLIENT_CLI_HPP
 

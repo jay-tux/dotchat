@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Database setup and teardown wrappers.
+ */
 
 #ifndef DOTCHAT_SERVER_DATABASE_HPP
 #define DOTCHAT_SERVER_DATABASE_HPP

@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Threaded worker for the server.
+ */
 
 #ifndef DOTCHAT_SERVER_THREAD_CONNECTION_HPP
 #define DOTCHAT_SERVER_THREAD_CONNECTION_HPP

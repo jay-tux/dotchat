@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Wrapper around socket + ssl context.
+ */
 
 #ifndef DOTCHAT_SERVER_TLS_SERVER_SOCKET_HPP
 #define DOTCHAT_SERVER_TLS_SERVER_SOCKET_HPP

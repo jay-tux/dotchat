@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Ease-of-use wrapper around SSL.
+ */
 
 #ifndef DOTCHAT_SERVER_TLS_CONNECTION_HPP
 #define DOTCHAT_SERVER_TLS_CONNECTION_HPP

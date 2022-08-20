@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Data types to be stored in the database.
+ */
 
 #ifndef DOTCHAT_SERVER_TYPES_HPP
 #define DOTCHAT_SERVER_TYPES_HPP

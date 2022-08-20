@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Wrapper around SSL error functions.
+ */
 
 #ifndef DOTCHAT_SERVER_TLS_ERROR_HPP
 #define DOTCHAT_SERVER_TLS_ERROR_HPP

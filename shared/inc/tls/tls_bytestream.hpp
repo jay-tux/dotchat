@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Bytestream for the TLS connection.
+ */
 
 #ifndef DOTCHAT_CLIENT_TLS_BYTESTREAM_HPP
 #define DOTCHAT_CLIENT_TLS_BYTESTREAM_HPP

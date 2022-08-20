@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Alternative variant implementation.
+ */
 
 #ifndef DOTCHAT_SERVER_EITHER_HPP
 #define DOTCHAT_SERVER_EITHER_HPP

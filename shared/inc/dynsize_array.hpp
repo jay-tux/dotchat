@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Dynamic-sized array which can't be resized.
+ */
 
 #ifndef DOTCHAT_DYNSIZE_ARRAY_HPP
 #define DOTCHAT_DYNSIZE_ARRAY_HPP

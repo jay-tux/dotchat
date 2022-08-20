@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Helpers for the handlers for the commands.
+ */
 
 #ifndef DOTCHAT_SERVER_HELPERS_HPP
 #define DOTCHAT_SERVER_HELPERS_HPP

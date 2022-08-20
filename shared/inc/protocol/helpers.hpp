@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Helpers for message to request/response parsers.
+ */
 
 #ifndef DOTCHAT_HELPERS_HPP
 #define DOTCHAT_HELPERS_HPP

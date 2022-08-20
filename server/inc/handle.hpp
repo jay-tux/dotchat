@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Abstraction to handle commands/messages.
+ */
 
 #ifndef DOTCHAT_SERVER_HANDLE_HPP
 #define DOTCHAT_SERVER_HANDLE_HPP

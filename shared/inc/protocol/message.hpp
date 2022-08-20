@@ -7,6 +7,10 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file
+ * \short Message parser and struct for the protocol.
+ */
 
 #ifndef DOTCHAT_CLIENT_MESSAGE_HPP
 #define DOTCHAT_CLIENT_MESSAGE_HPP
