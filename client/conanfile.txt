@@ -1,6 +1,5 @@
 [requires]
 openssl/3.0.3
-termcolor/2.0.0
 
 [generators]
 cmake
