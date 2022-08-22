@@ -4,6 +4,7 @@ server/cmake-build-debug/*
 client/cmake-build-debug/*
 server/*.pem
 client/*.pem
+server/db.dotchat.sqlite
 
 server/*.sql_db
 

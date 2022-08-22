@@ -18,13 +18,13 @@ conan_basic_setup()
 add_executable(${PROJECT_NAME}
         ../shared/src/tls/tls_server_socket.cpp ../shared/src/tls/tls_context.cpp ../shared/src/tls/tls_connection.cpp
         main.cpp
-        ../shared/src/protocol/message.cpp src/handle.cpp src/thread_connection.cpp
+        ../shared/src/protocol/message.cpp src/handle.cpp src/threading/thread_connection.cpp
         ../shared/src/protocol/message_intl.cpp
         src/handlers/login.cpp src/handlers/logout.cpp src/handlers/channels.cpp
         ../shared/src/protocol/requests.cpp ../shared/src/protocol/responses.cpp src/handlers/channel_messages.cpp
         src/handlers/send_message.cpp src/handlers/channel_details.cpp src/handlers/new_channel.cpp
         src/handlers/new_user.cpp src/handlers/change_pass.cpp src/handlers/user_details.cpp
-        src/handlers/invite_user.cpp)
+        src/handlers/invite_user.cpp src/threading/thread_mgr.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE inc/)
 target_include_directories(${PROJECT_NAME} PRIVATE ../shared/inc/)

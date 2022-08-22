@@ -7,9 +7,9 @@
 // Licence:     MPL
 /////////////////////////////////////////////////////////////////////////////
 
-#include <tls/tls_error.hpp>
+#include "tls/tls_error.hpp"
 #include <iostream>
-#include "thread_connection.hpp"
+#include "threading/thread_connection.hpp"
 #include "handle.hpp"
 
 using namespace dotchat::server;

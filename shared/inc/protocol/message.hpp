@@ -602,7 +602,7 @@ private:
   /**
    * \short The type of values contained in this list.
    */
-  val_types _contained;
+  val_types _contained = arg().type();
   /**
    * \short The content of the list, as argument values.
    */

@@ -52,7 +52,7 @@ login_request login_request::from(const dotchat::proto::message &m) {
 message login_request::to() const {
   return message(
       request_commands::login,
-      paired("user", user), paired(pass, pass)
+      paired("user", user), paired("pass", pass)
   );
 }
 

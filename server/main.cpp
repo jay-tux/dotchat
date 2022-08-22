@@ -1,8 +1,9 @@
 #include <string>
 #include <vector>
 #include "tls/tls_server_socket.hpp"
-#include "thread_connection.hpp"
+#include "threading/thread_connection.hpp"
 #include "tls/tls_error.hpp"
+#include "threading/thread_mgr.hpp"
 #include "db/database.hpp"
 #include <csignal>
 #include <atomic>
@@ -46,26 +47,18 @@ int main(int argc, const char **argv) {
   try {
     auto context = tls_context(std::string(argv[1]), std::string(argv[2]));
     auto socket = tls_server_socket(42069, context);
-    std::vector<thread_conn> open; // TODO remove on join
     std::cerr << "Waiting for connections..." << std::endl;
     while(flag == 0) {
       if(auto is_ready = socket.accept_nonblock(milli_delay); is_ready.has_value())
-        open.emplace_back(std::move(is_ready.value()));
+        thread_mgr::manager().enlist(std::move(is_ready.value()));
     }
     std::cerr << "Detected shutdown request..." << std::endl;
-    std::cerr << "  -> Closing " << open.size() << " running connection(s)/thread(s)..." << std::endl;
-    size_t i = 0;
-    for(auto &v: open) {
-      v.request_stop(); // request politely
-      std::cerr << "    -> Requested thread #" << i << " to stop..." << std::endl;
-      i++;
+    for(auto &v: thread_mgr::manager()) {
+      v.request_stop();
     }
-    i = 0;
-    for(auto &v: open) {
-      std::cerr << "    -> Waiting for thread #" << i << " to die..." << std::endl;
-      v.stop_sync(); // kill.
-      std::cerr << "    -> Thread #" << i << " died." << std::endl;
-      i++;
+
+    for(auto &v: thread_mgr::manager()) {
+      v.stop_sync();
     }
   }
   catch(const tls::tls_error &err) {
