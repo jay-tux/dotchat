@@ -10,7 +10,7 @@
  - [x] Database managed using ORM
  - [x] Separate thread per connection
  - [x] Reusable connections
- - [ ] Thread manager
+ - [x] Thread manager
  - [ ] TUI for client
  - [ ] TUI for server
  - [ ] Server background workers
